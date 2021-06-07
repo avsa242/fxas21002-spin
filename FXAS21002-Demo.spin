@@ -4,8 +4,8 @@
     Author: Jesse Burt
     Description: Demo of the FXAS21002 driver
     Copyright (c) 2021
-    Started Jun 07, 2021
-    Updated Jun 07, 2021
+    Started Aug 12, 2017
+    Updated Jan 26, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -15,31 +15,89 @@ CON
     _clkmode    = cfg#_clkmode
     _xinfreq    = cfg#_xinfreq
 
-' -- User-defined constants
-    SER_BAUD    = 115_200
+' -- User-modifiable constants
     LED         = cfg#LED1
+    SER_BAUD    = 115_200
 
+' I2C
     SCL_PIN     = 28
     SDA_PIN     = 29
     I2C_HZ      = 400_000
     ADDR_BITS   = %1
 ' --
 
+    DAT_X_COL   = 20
+    DAT_Y_COL   = DAT_X_COL + 15
+    DAT_Z_COL   = DAT_Y_COL + 15
+
 OBJ
 
-    cfg   : "core.con.boardcfg.flip"
-    ser   : "com.serial.terminal.ansi"
-    time  : "time"
+    cfg     : "core.con.boardcfg.flip"
+    ser     : "com.serial.terminal.ansi"
+    time    : "time"
+    int     : "string.integer"
     gyro    : "sensor.gyroscope.3dof.fxas21002.i2c"
 
-PUB Main{} | x, y, z
+PUB Main{}
 
     setup{}
-    gyro.gyroopmode(gyro#ACTIVE)
+    gyro.preset_active{}                        ' default settings, but enable
+                                                ' measurements, and set scale
+                                                ' factor
     repeat
-        gyro.gyrodata(@x, @y, @z)
-        ser.position(0,3)
-        ser.printf3(string("%d   %d   %d    "), x, y, z)
+        ser.position(0, 3)
+        gyrocalc{}
+
+        if ser.rxcheck{} == "c"                 ' press the 'c' key in the demo
+            calibrate{}                         ' to calibrate sensor offsets
+
+PUB GyroCalc{} | gx, gy, gz
+
+    repeat until gyro.gyrodataready{}           ' wait for new sensor data set
+    gyro.gyrodps(@gx, @gy, @gz)                 ' read calculated sensor data
+    ser.str(string("Gyro (dps):"))
+    ser.positionx(DAT_X_COL)
+    decimal(gx, 1000000)                        ' data is in micro-dps; display
+    ser.positionx(DAT_Y_COL)                    ' it as if it were a float
+    decimal(gy, 1000000)
+    ser.positionx(DAT_Z_COL)
+    decimal(gz, 1000000)
+    ser.clearline{}
+    ser.newline{}
+
+PUB Calibrate{}
+
+    ser.position(0, 7)
+    ser.str(string("Calibrating..."))
+    gyro.calibrategyro{}
+    ser.positionx(0)
+    ser.clearline{}
+
+PRI Decimal(scaled, divisor) | whole[4], part[4], places, tmp, sign
+' Display a scaled up number as a decimal
+'   Scale it back down by divisor (e.g., 10, 100, 1000, etc)
+    whole := scaled / divisor
+    tmp := divisor
+    places := 0
+    part := 0
+    sign := 0
+    if scaled < 0
+        sign := "-"
+    else
+        sign := " "
+
+    repeat
+        tmp /= 10
+        places++
+    until tmp == 1
+    scaled //= divisor
+    part := int.deczeroed(||(scaled), places)
+
+    ser.char(sign)
+    ser.dec(||(whole))
+    ser.char(".")
+    ser.str(part)
+    ser.chars(" ", 5)
 
 PUB Setup{}
 
@@ -49,11 +107,10 @@ PUB Setup{}
     ser.strln(string("Serial terminal started"))
 
     if gyro.startx(SCL_PIN, SDA_PIN, I2C_HZ, ADDR_BITS)
-        ser.strln(string("FXAS21002 driver started"))
+        ser.strln(string("FXAS21002 driver started (I2C)"))
     else
         ser.strln(string("FXAS21002 driver failed to start - halting"))
         repeat
-
 
 DAT
 {

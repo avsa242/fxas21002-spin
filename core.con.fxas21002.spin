@@ -33,7 +33,23 @@ CON
     F_EVENT         = $0A
     INT_SRC_FLAG    = $0B
     WHO_AM_I        = $0C
+
     CTRL_REG0       = $0D
+    CTRL_REG0_MASK  = $FF
+        BW          = 6
+        SPIW        = 5
+        SEL         = 3
+        HPF_EN      = 2
+        FS          = 0
+        BW_BITS     = %11
+        SEL_BITS    = %11
+        FS_BITS     = %11
+        BW_MASK     = (BW_BITS << BW) ^ CTRL_REG0_MASK
+        SPIW_MASK   = (1 << SPIW) ^ CTRL_REG0_MASK
+        SEL_MASK    = (SEL_BITS << SEL) ^ CTRL_REG0_MASK
+        HPF_EN_MASK = (1 << HPF_EN) ^ CTRL_REG0_MASK
+        FS_MASK     = FS_BITS ^ CTRL_REG0_MASK
+
     RT_CFG          = $0E
     RT_SRC          = $0F
     RT_THS          = $10

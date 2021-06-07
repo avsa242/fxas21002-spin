@@ -97,6 +97,12 @@ PUB Stop{}
 PUB Defaults{}
 ' Set factory defaults
 
+PUB Preset_Active{}
+' Preset: Enable sensor data acquisition and set:
+'   full scale: 250dps
+    gyroopmode(ACTIVE)
+    gyroscale(250)
+
 PUB CalibrateGyro{} | gyrotmp[GYRO_DOF], axis, x, y, z, samples, scale_orig, drate_orig, fifo_orig, scl
 ' Calibrate the gyroscope
 
@@ -180,10 +186,30 @@ PUB GyroOpMode(mode): curr_mode
     mode := ((curr_mode & core#STATE_MASK) | mode)
     writereg(core#CTRL_REG1, 1, @mode)
 
-PUB GyroScale(scale): curr_scl
+PUB GyroScale(scale): curr_scl | opmd_orig
 ' Set gyroscope full-scale range, in degrees per second
-'   Valid values: 125, 250, 500, 1000, 2000
+'   Valid values: 250, 500, 1000, 2000
 '   Any other value polls the chip and returns the current setting
+    curr_scl := 0
+    readreg(core#CTRL_REG0, 1, @curr_scl)
+    case scale
+        250, 500, 1000, 2000:
+            scale := lookdownz(scale: 2000, 1000, 500, 250)
+            ' find LSB per DPS
+            _gres := lookupz(scale: 62_500, 31_250, 15_625, 7_812{5})
+        other:
+            curr_scl &= core#FS_BITS
+            return lookupz(curr_scl: 2000, 1000, 500, 250)
+
+    opmd_orig := gyroopmode(-2)                 ' must be in STANDBY or SLEEP
+    if opmd_orig == ACTIVE                      '   to change this reg
+        gyroopmode(STANDBY)
+
+    scale := ((curr_scl & core#FS_MASK) | scale)
+    writereg(core#CTRL_REG0, 1, @scale)
+
+    if opmd_orig <> STANDBY                     ' if original opmode wasn't
+        gyroopmode(opmd_orig)                   '   STANDBY, switch back to it
 
 PUB Reset{}
 ' Reset the device
