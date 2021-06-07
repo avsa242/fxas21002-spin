@@ -38,6 +38,8 @@ CON
         ZDR         = 2
         YDR         = 1
         XDR         = 0
+        ORUN        = 1 << ZYXOW
+        DRDY        = 1 << ZYXDR
 
     F_STATUS        = $08
     F_SETUP         = $09

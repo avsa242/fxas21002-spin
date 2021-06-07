@@ -127,7 +127,10 @@ PUB GyroData(ptr_x, ptr_y, ptr_z) | tmp[2]
     long[ptr_z] := ~~tmp.word[Z_AXIS]
 
 PUB GyroDataOverrun{}: flag
-' Dummy method
+' Flag indicating gyroscope data overrun
+    flag := 0
+    readreg(core#DR_STATUS, 1, @flag)
+    return ((flag & core#ORUN) <> 0)
 
 PUB GyroDataRate(rate): curr_rate
 ' Set gyroscope output data rate, in Hz
@@ -139,7 +142,7 @@ PUB GyroDataReady{}: flag
 ' Flag indicating new gyroscope data available
     flag := 0
     readreg(core#DR_STATUS, 1, @flag)
-    return ((flag & core#ZYXDR) <> 0)
+    return ((flag & core#DRDY) <> 0)
 
 PUB GyroDPS(ptr_x, ptr_y, ptr_z) | tmp[GYRO_DOF]
 ' Read the Gyroscope output registers and scale the outputs to micro
