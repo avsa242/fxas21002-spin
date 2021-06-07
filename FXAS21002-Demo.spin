@@ -1,8 +1,8 @@
 {
     --------------------------------------------
     Filename: FXAS21002-Demo.spin
-    Author:
-    Description:
+    Author: Jesse Burt
+    Description: Demo of the FXAS21002 driver
     Copyright (c) 2021
     Started Jun 07, 2021
     Updated Jun 07, 2021
@@ -22,7 +22,7 @@ CON
     SCL_PIN     = 28
     SDA_PIN     = 29
     I2C_HZ      = 400_000
-    ADDR_BITS   = %0
+    ADDR_BITS   = %1
 ' --
 
 OBJ
@@ -32,11 +32,14 @@ OBJ
     time  : "time"
     gyro    : "sensor.gyroscope.3dof.fxas21002.i2c"
 
-PUB Main{}
+PUB Main{} | x, y, z
 
     setup{}
+    gyro.gyroopmode(gyro#ACTIVE)
     repeat
-
+        gyro.gyrodata(@x, @y, @z)
+        ser.position(0,3)
+        ser.printf3(string("%d   %d   %d    "), x, y, z)
 
 PUB Setup{}
 
