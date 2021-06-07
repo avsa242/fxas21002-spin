@@ -27,7 +27,18 @@ CON
     OUT_Y_LSB       = $04
     OUT_Z_MSB       = $05
     OUT_Z_LSB       = $06
+
     DR_STATUS       = $07
+    DR_STATUS_MASK  = $FF
+        ZYXOW       = 7
+        ZOW         = 6
+        YOW         = 5
+        XOW         = 4
+        ZYXDR       = 3
+        ZDR         = 2
+        YDR         = 1
+        XDR         = 0
+
     F_STATUS        = $08
     F_SETUP         = $09
     F_EVENT         = $0A
