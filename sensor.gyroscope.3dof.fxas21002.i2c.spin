@@ -5,7 +5,7 @@
     Description: Driver for the NXP FXAS21002 3DoF Gyroscope
     Copyright (c) 2021
     Started Jun 07, 2021
-    Updated Jun 07, 2021
+    Updated Jun 08, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -132,11 +132,29 @@ PUB GyroDataOverrun{}: flag
     readreg(core#DR_STATUS, 1, @flag)
     return ((flag & core#ORUN) <> 0)
 
-PUB GyroDataRate(rate): curr_rate
+PUB GyroDataRate(rate): curr_rate | opmd_orig
 ' Set gyroscope output data rate, in Hz
 '   Valid values:
-
+'       12, 25, 50, 100, 200, 400, 800
 '   Any other value polls the chip and returns the current setting
+    curr_rate := 0
+    readreg(core#CTRL_REG1, 1, @curr_rate)
+    case rate
+        12, 25, 50, 100, 200, 400, 800:
+            rate := lookdownz(rate: 800, 400, 200, 100, 50, 25, 12) << core#DR
+        other:
+            curr_rate := (curr_rate >> core#DR) & core#DR_BITS
+            return lookupz(curr_rate: 800, 400, 200, 100, 50, 25, 12, 12)
+
+    opmd_orig := gyroopmode(-2)                 ' must be in STANDBY or SLEEP
+    if opmd_orig == ACTIVE                      '   to change this reg
+        gyroopmode(STANDBY)
+
+    rate := ((curr_rate & core#DR_MASK) | rate)
+    writereg(core#CTRL_REG1, 1, @rate)
+
+    if opmd_orig <> STANDBY                     ' if original opmode wasn't
+        gyroopmode(opmd_orig)                   '   STANDBY, switch back to it
 
 PUB GyroDataReady{}: flag
 ' Flag indicating new gyroscope data available
@@ -145,7 +163,8 @@ PUB GyroDataReady{}: flag
     return ((flag & core#DRDY) <> 0)
 
 PUB GyroDPS(ptr_x, ptr_y, ptr_z) | tmp[GYRO_DOF]
-' Read the Gyroscope output registers and scale the outputs to micro
+' Read the Gyroscope output registers and scale the outputs to
+'   micro degrees per second
     gyrodata(@tmp[X_AXIS], @tmp[Y_AXIS], @tmp[Z_AXIS])
     long[ptr_x] := tmp[X_AXIS] * _gres
     long[ptr_y] := tmp[Y_AXIS] * _gres
