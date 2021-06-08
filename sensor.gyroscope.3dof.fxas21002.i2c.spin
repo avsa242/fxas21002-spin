@@ -23,43 +23,47 @@ CON
 
 ' Indicate to user apps how many Degrees of Freedom each sub-sensor has
 '   (also imply whether or not it has a particular sensor)
-    ACCEL_DOF               = 0
-    GYRO_DOF                = 3
-    MAG_DOF                 = 0
-    BARO_DOF                = 0
-    DOF                     = ACCEL_DOF + GYRO_DOF + MAG_DOF + BARO_DOF
+    ACCEL_DOF       = 0
+    GYRO_DOF        = 3
+    MAG_DOF         = 0
+    BARO_DOF        = 0
+    DOF             = ACCEL_DOF + GYRO_DOF + MAG_DOF + BARO_DOF
 
 ' Scales and data rates used during calibration/bias/offset process
-    CAL_XL_SCL              = 0
-    CAL_G_SCL               = 0 'tbd
-    CAL_M_SCL               = 0
-    CAL_XL_DR               = 0
-    CAL_G_DR                = 0 'tbd
-    CAL_M_DR                = 0
+    CAL_XL_SCL      = 0
+    CAL_G_SCL       = 0 'tbd
+    CAL_M_SCL       = 0
+    CAL_XL_DR       = 0
+    CAL_G_DR        = 0 'tbd
+    CAL_M_DR        = 0
 
 ' Bias adjustment (AccelBias(), GyroBias(), MagBias()) read or write
-    R                       = 0
-    W                       = 1
+    R               = 0
+    W               = 1
 
 ' Axis-specific constants
-    X_AXIS                  = 2
-    Y_AXIS                  = 1
-    Z_AXIS                  = 0
-    ALL_AXES                = 3
+    X_AXIS          = 2
+    Y_AXIS          = 1
+    Z_AXIS          = 0
+    ALL_AXES        = 3
 
 ' Temperature scale constants
-    C                       = 0
-    F                       = 1
+    C               = 0
+    F               = 1
 
 ' Operating modes
-    SLEEP                   = 0
-    STANDBY                 = 1
-    ACTIVE                  = 2
+    SLEEP           = 0
+    STANDBY         = 1
+    ACTIVE          = 2
 
 ' Interrupt flags
-    INT_FIFO                = 1 << 6
-    INT_RT_THR              = 1 << 4
-    INT_DRDY                = 1 << 2
+    INT_FIFO        = 1 << 6
+    INT_RT_THR      = 1 << 4
+    INT_DRDY        = 1 << 2
+
+' Interrupt pin active state/polarity
+    ACT_LOW         = 0
+    ACT_HI          = 1
 
 VAR
 
@@ -189,6 +193,23 @@ PUB GyroInactiveSleep(state): curr_state
 
 PUB GyroInt{}: flag
 ' Flag indicating gyroscope interrupt asserted
+
+PUB GyroIntActiveState(state): curr_state
+' Set gyroscope interrupt pin active state/polarity
+'   Valid values:
+'       ACT_LOW (0): active low
+'       ACT_HI (1): active high
+'   Any other value polls the chip and returns the current setting
+    curr_state := 0
+    readreg(core#CTRL_REG2, 1, @curr_state)
+    case state
+        ACT_LOW, ACT_HI:
+            state <<= core#IPOL
+        other:
+            return ((curr_state >> core#IPOL) & 1)
+
+    state := ((curr_state & core#IPOL_MASK) | state)
+    writereg(core#CTRL_REG2, 1, @state)
 
 PUB GyroIntMask(mask): curr_mask | ififo_tmp, irate_tmp, idata_tmp
 ' Set gyroscope interrupt mask
