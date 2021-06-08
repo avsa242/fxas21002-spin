@@ -5,7 +5,7 @@
     Description: HW-specific low-level constants
     Copyright (c) 2021
     Started Jun 07, 2021
-    Updated Jun 07, 2021
+    Updated Jun 08, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -88,6 +88,20 @@ CON
         RESET       = 1 < RST
 
     CTRL_REG2       = $14
+    CTRL_REG2_MASK  = $FF
+        INT_CFG_FIFO= 7
+        INT_EN_FIFO = 6
+        INT_CFG_RT  = 5
+        INT_EN_RT   = 4
+        INT_CFG_DRDY= 3
+        IN_EN_DRDY  = 2
+        IPOL        = 1
+        PP_OD       = 0
+        INT_EN_BITS = %01010100
+        INT_CFG_BITS= %10101000
+        INT_EN_MASK = (INT_EN_BITS ^ CTRL_REG2_MASK)
+        INT_CFG_MASK= (INT_CFG_BITS ^ CTRL_REG2_MASK)
+
     CTRL_REG3       = $15
 
 PUB Null{}

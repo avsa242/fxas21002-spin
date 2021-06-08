@@ -56,6 +56,11 @@ CON
     STANDBY                 = 1
     ACTIVE                  = 2
 
+' Interrupt flags
+    INT_FIFO                = 1 << 6
+    INT_RT_THR              = 1 << 4
+    INT_DRDY                = 1 << 2
+
 VAR
 
     long _gres, _gbiasraw[GYRO_DOF]
@@ -184,6 +189,29 @@ PUB GyroInactiveSleep(state): curr_state
 
 PUB GyroInt{}: flag
 ' Flag indicating gyroscope interrupt asserted
+
+PUB GyroIntMask(mask): curr_mask | ififo_tmp, irate_tmp, idata_tmp
+' Set gyroscope interrupt mask
+'   Bits 7..0
+'       7: not used
+'       6 (INT_FIFO): FIFO interrupt enable
+'       5: not used
+'       4 (INT_RT_THR): rate threshold interrupt enable
+'       3: not used
+'       2 (INT_DRDY): data ready interrupt enable
+'       1: not used
+'       0: not used
+'   Any other value polls the chip and returns the current setting
+    curr_mask := 0
+    readreg(core#CTRL_REG2, 1, @curr_mask)
+    case mask
+        %00000000..%01010100:
+            mask &= core#INT_EN_BITS
+        other:
+            return curr_mask & core#INT_EN_BITS
+
+    mask := ((curr_mask & core#INT_EN_MASK) | mask)
+    writereg(core#CTRL_REG2, 1, @mask)
 
 PUB GyroIntSelect(mode): curr_mode
 ' Set gyroscope interrupt generator selection
