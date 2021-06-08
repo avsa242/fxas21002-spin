@@ -65,6 +65,10 @@ CON
     ACT_LOW         = 0
     ACT_HI          = 1
 
+' Interrupt output driver modes
+    INT_PP          = 0
+    INT_OD          = 1
+
 VAR
 
     long _gres, _gbiasraw[GYRO_DOF]
@@ -233,6 +237,23 @@ PUB GyroIntMask(mask): curr_mask | ififo_tmp, irate_tmp, idata_tmp
 
     mask := ((curr_mask & core#INT_EN_MASK) | mask)
     writereg(core#CTRL_REG2, 1, @mask)
+
+PUB GyroIntOutMode(mode) : curr_mode
+' Set gyroscope interrupt pin output driver mode
+'   Valid values:
+'       INT_PP (0): push-pull
+'       INT_OD (1): open-drain/open-source
+'           (when GyroIntActiveState() == 0, 1, respectively)
+'   Any other value polls the chip and returns the current setting
+    curr_mode := 0
+    readreg(core#CTRL_REG2, 1, @curr_mode)
+    case mode
+        INT_PP, INT_OD:
+        other:
+            return (curr_mode & 1)
+
+    mode := ((curr_mode & core#PP_OD_MASK) | mode)
+    writereg(core#CTRL_REG2, 1, @mode)
 
 PUB GyroIntSelect(mode): curr_mode
 ' Set gyroscope interrupt generator selection
