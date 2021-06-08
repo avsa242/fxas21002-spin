@@ -60,6 +60,7 @@ VAR
 
     long _gres, _gbiasraw[GYRO_DOF]
     byte _addr_bits
+    byte _opmd_orig
 
 OBJ
 
@@ -132,7 +133,7 @@ PUB GyroDataOverrun{}: flag
     readreg(core#DR_STATUS, 1, @flag)
     return ((flag & core#ORUN) <> 0)
 
-PUB GyroDataRate(rate): curr_rate | opmd_orig
+PUB GyroDataRate(rate): curr_rate
 ' Set gyroscope output data rate, in Hz
 '   Valid values:
 '       12, 25, 50, 100, 200, 400, 800
@@ -146,15 +147,12 @@ PUB GyroDataRate(rate): curr_rate | opmd_orig
             curr_rate := (curr_rate >> core#DR) & core#DR_BITS
             return lookupz(curr_rate: 800, 400, 200, 100, 50, 25, 12, 12)
 
-    opmd_orig := gyroopmode(-2)                 ' must be in STANDBY or SLEEP
-    if opmd_orig == ACTIVE                      '   to change this reg
-        gyroopmode(STANDBY)
+    standby_saveopmode{}
 
     rate := ((curr_rate & core#DR_MASK) | rate)
     writereg(core#CTRL_REG1, 1, @rate)
 
-    if opmd_orig <> STANDBY                     ' if original opmode wasn't
-        gyroopmode(opmd_orig)                   '   STANDBY, switch back to it
+    restoreopmode{}
 
 PUB GyroDataReady{}: flag
 ' Flag indicating new gyroscope data available
@@ -211,7 +209,7 @@ PUB GyroOpMode(mode): curr_mode
     mode := ((curr_mode & core#STATE_MASK) | mode)
     writereg(core#CTRL_REG1, 1, @mode)
 
-PUB GyroScale(scale): curr_scl | opmd_orig
+PUB GyroScale(scale): curr_scl
 ' Set gyroscope full-scale range, in degrees per second
 '   Valid values: 250, 500, 1000, 2000
 '   Any other value polls the chip and returns the current setting
@@ -226,15 +224,12 @@ PUB GyroScale(scale): curr_scl | opmd_orig
             curr_scl &= core#FS_BITS
             return lookupz(curr_scl: 2000, 1000, 500, 250)
 
-    opmd_orig := gyroopmode(-2)                 ' must be in STANDBY or SLEEP
-    if opmd_orig == ACTIVE                      '   to change this reg
-        gyroopmode(STANDBY)
+    standby_saveopmode{}
 
     scale := ((curr_scl & core#FS_MASK) | scale)
     writereg(core#CTRL_REG0, 1, @scale)
 
-    if opmd_orig <> STANDBY                     ' if original opmode wasn't
-        gyroopmode(opmd_orig)                   '   STANDBY, switch back to it
+    restoreopmode{}
 
 PUB Reset{}
 ' Reset the device
@@ -268,6 +263,18 @@ PRI readReg(reg_nr, nr_bytes, ptr_buff) | cmd_pkt
     '
         other:                                  ' invalid reg_nr
             return
+
+PRI restoreOpMode{}
+' Restore previously cached opmode, if it wasn't STANDBY
+    if _opmd_orig <> STANDBY                     ' if original opmode wasn't
+        gyroopmode(_opmd_orig)                   '   STANDBY, switch back to it
+
+PRI standby_saveOpMode{}
+' Set chip to STANDBY, if it isn't already, and cache the previous opmode
+'   so it can be restored later
+    _opmd_orig := gyroopmode(-2)                 ' must be in STANDBY or SLEEP
+    if _opmd_orig == ACTIVE                      '   to change this reg
+        gyroopmode(STANDBY)
 
 PRI writeReg(reg_nr, nr_bytes, ptr_buff) | cmd_pkt
 ' Write nr_bytes to the device from ptr_buff
