@@ -97,10 +97,12 @@ PUB Stop{}
 
 PUB Defaults{}
 ' Set factory defaults
+    reset{}
 
 PUB Preset_Active{}
 ' Preset: Enable sensor data acquisition and set:
 '   full scale: 250dps
+    reset{}
     gyroopmode(ACTIVE)
     gyroscale(250)
 
@@ -231,8 +233,10 @@ PUB GyroScale(scale): curr_scl
 
     restoreopmode{}
 
-PUB Reset{}
+PUB Reset{} | tmp
 ' Reset the device
+    tmp := core#RESET
+    writereg(core#CTRL_REG1, 1, @tmp)
 
 PUB Temperature{}: temp
 ' Read chip temperature

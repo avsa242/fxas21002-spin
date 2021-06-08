@@ -85,6 +85,7 @@ CON
         ACTIVE_MASK = (1 << ACTIVE) ^ CTRL_REG1_MASK
         READY_MASK  = 1 ^ CTRL_REG1_MASK
         STATE_MASK  = STATE_BITS ^ CTRL_REG1_MASK
+        RESET       = 1 < RST
 
     CTRL_REG2       = $14
     CTRL_REG3       = $15
