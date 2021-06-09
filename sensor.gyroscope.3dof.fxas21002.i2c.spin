@@ -267,9 +267,13 @@ PUB GyroIntActiveState(state): curr_state
     state := ((curr_state & core#IPOL_MASK) | state)
     writereg(core#CTRL_REG2, 1, @state)
 
-PUB GyroIntMask(mask): curr_mask | ififo_tmp, irate_tmp, idata_tmp
+PUB GyroIntMask(mask): curr_mask | reg2, rtcfg
 ' Set gyroscope interrupt mask
-'   Bits 7..0
+'   Bits 11..0
+'       11: latch interrupts
+'       10: z-axis rate threshold interrupt enable
+'       9: y-axis rate threshold interrupt enable
+'       8: x-axis rate threshold interrupt enable
 '       7: not used
 '       6 (INT_FIFO): FIFO interrupt enable
 '       5: not used
@@ -280,15 +284,20 @@ PUB GyroIntMask(mask): curr_mask | ififo_tmp, irate_tmp, idata_tmp
 '       0: not used
 '   Any other value polls the chip and returns the current setting
     curr_mask := 0
-    readreg(core#CTRL_REG2, 1, @curr_mask)
+    readreg(core#CTRL_REG2, 1, @curr_mask.byte[0])
+    readreg(core#RT_CFG, 1, @curr_mask.byte[1])
     case mask
-        %00000000..%01010100:
-            mask &= core#INT_EN_BITS
+        0..%1111_11111111:
+            reg2 := mask.byte[0] & core#INT_EN_BITS
+            rtcfg := mask.byte[1] & core#RT_CFG_MASK
         other:
-            return curr_mask & core#INT_EN_BITS
+            curr_mask.byte[0] &= core#INT_EN_BITS
+            return
 
-    mask := ((curr_mask & core#INT_EN_MASK) | mask)
+    mask := ((curr_mask.byte[0] & core#INT_EN_MASK) | reg2)
     writereg(core#CTRL_REG2, 1, @mask)
+    mask := ((curr_mask.byte[1] & core#ELE_EFE_MASK) | rtcfg)
+    writereg(core#RT_CFG, 1, @mask)
 
 PUB GyroIntOutMode(mode) : curr_mode
 ' Set gyroscope interrupt pin output driver mode

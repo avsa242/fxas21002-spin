@@ -64,6 +64,14 @@ CON
         FS_MASK     = FS_BITS ^ CTRL_REG0_MASK
 
     RT_CFG          = $0E
+    RT_CFG_MASK     = $0F
+        ELE         = 3
+        ZTEFE       = 2
+        YTEFE       = 1
+        XTEFE       = 0
+        ELE_MASK    = (1 << ELE) ^ RT_CFG_MASK
+        ELE_EFE_MASK= %1111 ^ RT_CFG_MASK
+
     RT_SRC          = $0F
     RT_THS          = $10
     RT_COUNT        = $11
