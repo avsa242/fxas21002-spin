@@ -190,9 +190,6 @@ PUB GyroBias(gxbias, gybias, gzbias, rw)
                     _gbiasraw[Z_AXIS] := gzbias
                 other:
 
-PUB GyroClearInt{}
-' Clears out any interrupts set up on the Gyroscope and resets all Gyroscope interrupt registers to their default values.
-
 PUB GyroData(ptr_x, ptr_y, ptr_z) | tmp[2]
 ' Reads the Gyroscope output registers
     readreg(core#OUT_X_MSB, 6, @tmp)
@@ -367,7 +364,65 @@ PUB GyroIntThresh(x, y, z, rw) | gscl, lsb, tmp, axis
             long[z] := tmp * lsb
 
 PUB GyroLowPassFilter(freq): curr_freq
-' Set gyroscope output data low
+' Set gyroscope output data low-pass filter, in Hz
+'   Valid values:
+'       4..256 (available values depend on GyroDataRate() setting)
+'   Any other value polls the chip and returns the current setting
+    curr_freq := 0
+    readreg(core#CTRL_REG0, 1, @curr_freq)
+    case gyrodatarate(-2)                       ' check current data rate to
+        800:                                    ' determine avail. LPF freqs
+            case freq
+                256, 128, 64:
+                    freq := lookdownz(freq: 256, 128, 64) << core#BW
+                other:
+                    curr_freq := ((curr_freq >> core#BW) & core#BW_BITS)
+                    return lookupz(freq: 256, 128, 64)
+        400:
+            case freq
+                128, 64, 32:
+                    freq := lookdownz(freq: 128, 64, 32) << core#BW
+                other:
+                    curr_freq := ((curr_freq >> core#BW) & core#BW_BITS)
+                    return lookupz(freq: 128, 64, 32)
+        200:
+            case freq
+                64, 32, 16:
+                    freq := lookdownz(freq: 64, 32, 16) << core#BW
+                other:
+                    curr_freq := ((curr_freq >> core#BW) & core#BW_BITS)
+                    return lookupz(freq: 64, 32, 16)
+        100:
+            case freq
+                32, 16, 8:
+                    freq := lookdownz(freq: 32, 16, 8) << core#BW
+                other:
+                    curr_freq := ((curr_freq >> core#BW) & core#BW_BITS)
+                    return lookupz(freq: 32, 16, 8)
+        50:
+            case freq
+                16, 8, 4:
+                    freq := lookdownz(freq: 16, 8, 4) << core#BW
+                other:
+                    curr_freq := ((curr_freq >> core#BW) & core#BW_BITS)
+                    return lookupz(freq: 16, 8, 4)
+        25:
+            case freq
+                8, 4:
+                    freq := lookdownz(freq: 8, 4) << core#BW
+                other:
+                    curr_freq := ((curr_freq >> core#BW) & core#BW_BITS)
+                    return lookupz(freq: 8, 4)
+        12:
+            case freq
+                4:
+                    freq := 0
+                other:
+                    return 4
+    freq := ((curr_freq & core#BW_MASK) | freq)
+    standby_saveopmode{}
+    writereg(core#CTRL_REG0, 1, @freq)
+    restoreopmode{}
 
 PUB GyroLowPower(state): curr_state
 ' Enable low
