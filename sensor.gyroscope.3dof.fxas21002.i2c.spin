@@ -238,8 +238,96 @@ PUB GyroDPS(ptr_x, ptr_y, ptr_z) | tmp[GYRO_DOF]
     long[ptr_y] := tmp[Y_AXIS] * _gres
     long[ptr_z] := tmp[Z_AXIS] * _gres
 
-PUB GyroHighPass(freq): curr_freq
-' Set Gyroscope high
+PUB GyroHighPassFilter(freq): curr_freq | hpf_en
+' Set Gyroscope high-pass filter cutoff frequency, in Hz
+'   Valid values: dependent on GyroDataRate(), see table below
+'   Any other value polls the chip and returns the current setting
+    curr_freq := 0
+    case gyrodatarate(-2)                       ' check current data rate to
+        800:                                    ' determine avail. HPF freqs
+            case freq
+                15_000, 7_700, 3_900, 1_980:
+                    freq := lookdownz(freq: 15_000, 7_700, 3_900, 1_980) {
+}                   << core#SEL
+                    hpf_en := 1                 ' if freq is nonzero, enable
+                0:
+                    hpf_en := 0                 ' otherwise, disable
+                other:
+                    curr_freq := ((curr_freq >> core#SEL) & core#SEL_BITS)
+                    return lookupz(curr_freq: 15_000, 7_700, 3_900, 1_980)
+        400:
+            case freq
+                7_500, 3_850, 1_950, 0_990:
+                    freq := lookdownz(freq: 7_500, 3_850, 1_950, 0_990) {
+}                   << core#SEL
+                    hpf_en := 1
+                0:
+                    hpf_en := 0
+                other:
+                    curr_freq := ((curr_freq >> core#SEL) & core#SEL_BITS)
+                    return lookupz(curr_freq: 7_500, 3_850, 1_950, 0_990)
+        200:
+            case freq
+                3_750, 1_925, 0_975, 0_495:
+                    freq := lookdownz(freq: 3_750, 1_925, 0_975, 0_495) {
+}                   << core#SEL
+                    hpf_en := 1
+                0:
+                    hpf_en := 0
+                other:
+                    curr_freq := ((curr_freq >> core#SEL) & core#SEL_BITS)
+                    return lookupz(curr_freq: 3_750, 1_925, 0_975, 0_495)
+        100:
+            case freq
+                1_875, 0_963, 0_488, 0_248:
+                    freq := lookdownz(freq: 1_875, 0_963, 0_488, 0_248) {
+}                   << core#SEL
+                    hpf_en := 1
+                0:
+                    hpf_en := 0
+                other:
+                    curr_freq := ((curr_freq >> core#SEL) & core#SEL_BITS)
+                    return lookupz(curr_freq: 1_875, 0_963, 0_488, 0_248)
+        50:
+            case freq
+                0_937, 0_481, 0_244, 0_124:
+                    freq := lookdownz(freq: 0_937, 0_481, 0_244, 0_124) {
+}                   << core#SEL
+                    hpf_en := 1
+                0:
+                    hpf_en := 0
+
+                other:
+                    curr_freq := ((curr_freq >> core#SEL) & core#SEL_BITS)
+                    return lookupz(curr_freq: 0_937, 0_481, 0_244, 0_124)
+        25:
+            case freq
+                0_468, 0_241, 0_122, 0_062:
+                    freq := lookdownz(freq: 0_468, 0_241, 0_122, 0_062) {
+}                   << core#SEL
+                    hpf_en := 1
+                0:
+                    hpf_en := 0
+
+                other:
+                    curr_freq := ((curr_freq >> core#SEL) & core#SEL_BITS)
+                    return lookupz(curr_freq: 0_468, 0_241, 0_122, 0_062)
+        12:
+            case freq
+                0_234, 0_120, 0_061, 0_031:
+                    freq := lookdownz(freq: 0_234, 0_120, 0_061, 0_031) {
+}                   << core#SEL
+                    hpf_en := 1
+                0:
+                    hpf_en := 0
+                other:
+                    curr_freq := ((curr_freq >> core#SEL) & core#SEL_BITS)
+                    return lookupz(curr_freq: 0_234, 0_120, 0_061, 0_031)
+
+    freq := ((curr_freq & core#SEL_MASK & core#HPF_EN_MASK) | freq | hpf_en)
+    standby_saveopmode{}
+    writereg(core#CTRL_REG0, 1, @freq)
+    restoreopmode{}
 
 PUB GyroInactiveDur(duration): curr_dur
 ' Set gyroscope inactivity timer (use GyroInactiveSleep to define behavior on inactivity)
@@ -364,7 +452,7 @@ PUB GyroIntThresh(x, y, z, rw) | gscl, lsb, tmp, axis
             long[z] := tmp * lsb
 
 PUB GyroLowPassFilter(freq): curr_freq
-' Set gyroscope output data low-pass filter, in Hz
+' Set gyroscope output data low-pass filter cutoff frequency, in Hz
 '   Valid values:
 '       4..256 (available values depend on GyroDataRate() setting)
 '   Any other value polls the chip and returns the current setting
