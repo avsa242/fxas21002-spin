@@ -369,12 +369,6 @@ PUB TempData{}: temp_adc
     readreg(core#TEMP, 1, @temp_adc)
     ~temp_adc
 
-PUB TempDataRate(rate): curr_rate
-' Set temperature output data rate, in Hz
-
-PUB TempDataReady{}: flag
-' Flag indicating new temperature sensor data available
-
 PUB TempScale(scale): curr_scl
 ' Set temperature scale used by Temperature method
 '   Valid values:
@@ -432,7 +426,7 @@ PRI standby_saveOpMode{}
 PRI writeReg(reg_nr, nr_bytes, ptr_buff) | cmd_pkt
 ' Write nr_bytes to the device from ptr_buff
     case reg_nr
-        $09, $0D, $0E, $100, $11, $13..$15:
+        $09, $0D, $0E, $10, $11, $13..$15:
             cmd_pkt.byte[0] := SLAVE_WR | _addr_bits
             cmd_pkt.byte[1] := reg_nr
             i2c.start{}
