@@ -73,7 +73,15 @@ CON
         ELE_EFE_MASK= %1111 ^ RT_CFG_MASK
 
     RT_SRC          = $0F
+
     RT_THS          = $10
+    RT_THS_MASK     = $FF
+        DBCNTM      = 7
+        THS         = 0
+        THS_BITS    = %1111111
+        DBCNTM_MASK = (1 << DBCNTM) ^ RT_THS_MASK
+        THS_MASK    = THS_BITS ^ RT_THS_MASK
+
     RT_COUNT        = $11
     TEMP            = $12
 

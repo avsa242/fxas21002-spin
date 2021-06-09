@@ -319,6 +319,38 @@ PUB GyroIntOutMode(mode) : curr_mode
 PUB GyroIntSelect(mode): curr_mode
 ' Set gyroscope interrupt generator selection
 
+PUB GyroIntThresh(x, y, z, rw) | gscl, lsb, tmp, axis
+' Set gyroscope interrupt threshold, in micro-dps (unsigned)
+'   Valid values: 0..(full-scale * 1_000_000)
+'   Any other value will be clamped to min/max limits
+'   NOTE: When rw == R (0), x, y, and z must be pointers to variables
+'       to hold values read from chip
+'   NOTE: This device only supports one threshold setting, for all axes.
+'       x, y, z params are for compatibility only
+'       The X-axis parameter determines the set threshold set
+    gscl := gyroscale(-2) * 1_000000
+    lsb := gscl / 128                           ' calc LSB for the thresh reg
+    case rw
+        W:
+            x := y := z := 0 #> x <# gscl       ' clamp values to full-scale
+            x /= lsb                            ' scale values down to reg's
+                                                '   7-bit unsigned format
+            readreg(core#RT_THS, 1, @tmp)       ' get reg value to preserve
+            x := ((tmp & core#THS_MASK) | x)    '   unrelated bits
+
+            standby_saveopmode{}
+            writereg(core#RT_THS, 1, @x)
+            restoreopmode{}
+        R:
+            tmp := 0
+            readreg(core#RT_THS, 1, @tmp)
+            ' scale values up to output
+            '   data scale (micro-dps)
+            tmp &= core#THS_BITS
+            long[x] := tmp * lsb
+            long[y] := tmp * lsb
+            long[z] := tmp * lsb
+
 PUB GyroLowPassFilter(freq): curr_freq
 ' Set gyroscope output data low
 
