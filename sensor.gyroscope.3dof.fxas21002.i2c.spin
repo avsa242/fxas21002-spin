@@ -61,6 +61,11 @@ CON
     INT_RT_THR      = 1 << 4
     INT_DRDY        = 1 << 2
 
+    INT_THS         = 1 << 11
+    INT_ZTHS        = 1 << 10
+    INT_YTHS        = 1 << 9
+    INT_XTHS        = 1 << 8
+
 ' Interrupt pin active state/polarity
     ACT_LOW         = 0
     ACT_HI          = 1
@@ -68,6 +73,7 @@ CON
 ' Interrupt output driver modes
     INT_PP          = 0
     INT_OD          = 1
+
 
 VAR
 
@@ -247,8 +253,17 @@ PUB GyroInactiveThr(thresh): curr_thr
 PUB GyroInactiveSleep(state): curr_state
 ' Enable gyroscope sleep mode when inactive (see GyroActivityThr)
 
-PUB GyroInt{}: flag
-' Flag indicating gyroscope interrupt asserted
+PUB GyroInt{}: int_src
+' Read gyroscope interrupts
+'   Bit 6..0
+'       6 (INT_THS): threshold interrupt detected on one or more axes
+'       5 (INT_ZTHS): threshold interrupt detected on Z-axis
+'       4: polarity of Z interrupt (0: positive, 1: negative)
+'       3 (INT_YTHS): threshold interrupt detected on Z-axis
+'       2: polarity of Y interrupt (0: positive, 1: negative)
+'       1 (INT_XTHS): threshold interrupt detected on Z-axis
+'       0: polarity of X interrupt (0: positive, 1: negative)
+    readreg(core#RT_SRC, 1, @int_src)
 
 PUB GyroIntActiveState(state): curr_state
 ' Set gyroscope interrupt pin active state/polarity

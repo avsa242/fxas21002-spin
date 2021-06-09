@@ -4,8 +4,8 @@
     Author: Jesse Burt
     Description: Demo of the FXAS21002 driver
     Copyright (c) 2021
-    Started Aug 12, 2017
-    Updated Jan 26, 2021
+    Started Jun 07, 2021
+    Updated Jun 09, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
