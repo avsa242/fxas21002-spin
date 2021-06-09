@@ -31,10 +31,10 @@ CON
 
 ' Scales and data rates used during calibration/bias/offset process
     CAL_XL_SCL      = 0
-    CAL_G_SCL       = 0 'tbd
+    CAL_G_SCL       = 250
     CAL_M_SCL       = 0
     CAL_XL_DR       = 0
-    CAL_G_DR        = 0 'tbd
+    CAL_G_DR        = 200
     CAL_M_DR        = 0
 
 ' Bias adjustment (AccelBias(), GyroBias(), MagBias()) read or write
@@ -119,8 +119,34 @@ PUB Preset_Active{}
     gyroopmode(ACTIVE)
     gyroscale(250)
 
-PUB CalibrateGyro{} | gyrotmp[GYRO_DOF], axis, x, y, z, samples, scale_orig, drate_orig, fifo_orig, scl
+PUB CalibrateGyro{} | axis, orig_scl, orig_dr, tmpx, tmpy, tmpz, tmp[GYRO_DOF], samples
 ' Calibrate the gyroscope
+    longfill(@axis, 0, 10)                      ' initialize vars to 0
+    orig_scl := gyroscale(-2)                   ' save user's current settings
+    orig_dr := gyrodatarate(-2)
+    gyrobias(0, 0, 0, W)                        ' clear existing bias
+
+    ' set sensor to CAL_G_SCL range, CAL_G_DR Hz data rate
+    gyroscale(CAL_G_SCL)
+    gyrodatarate(CAL_G_DR)
+    samples := CAL_G_DR                         ' samples = DR, for 1 sec time
+
+    ' accumulate and average approx. 1sec worth of samples
+    repeat samples
+        repeat until gyrodataready{}
+        gyrodata(@tmpx, @tmpy, @tmpz)
+        tmp[X_AXIS] += tmpx
+        tmp[Y_AXIS] += tmpy
+        tmp[Z_AXIS] += tmpz
+
+    repeat axis from X_AXIS to Z_AXIS           ' calc avg
+        tmp[axis] /= samples
+
+    ' update offsets
+    gyrobias(tmp[X_AXIS], tmp[Y_AXIS], tmp[Z_AXIS], W)
+
+    gyroscale(orig_scl)                         ' restore user's settings
+    gyrodatarate(orig_dr)
 
 PUB DeviceID{}: id
 ' Read device identification
@@ -129,8 +155,33 @@ PUB DeviceID{}: id
 PUB GyroAxisEnabled(mask): curr_mask
 ' Enable data output for gyroscope (all axes)
 
-PUB GyroBias(ptr_x, ptr_y, ptr_z, rw) | tmp[GYRO_DOF]
-' Read or write/manually set gyroscope calibration offset values
+PUB GyroBias(gxbias, gybias, gzbias, rw)
+' Read or write/manually set Gyroscope calibration offset values
+'   Valid values:
+'       rw:
+'           R (0), W (1)
+'       gxbias, gybias, gzbias:
+'           -32768..32767
+'   NOTE: When rw is set to READ, gxbias, gybias and gzbias must be addresses
+'       of respective variables to hold the returned calibration offset values.
+    case rw
+        R:
+            long[gxbias] := _gbiasraw[X_AXIS]
+            long[gybias] := _gbiasraw[Y_AXIS]
+            long[gzbias] := _gbiasraw[Z_AXIS]
+        W:
+            case gxbias
+                -32768..32767:
+                    _gbiasraw[X_AXIS] := gxbias
+                other:
+            case gybias
+                -32768..32767:
+                    _gbiasraw[Y_AXIS] := gybias
+                other:
+            case gzbias
+                -32768..32767:
+                    _gbiasraw[Z_AXIS] := gzbias
+                other:
 
 PUB GyroClearInt{}
 ' Clears out any interrupts set up on the Gyroscope and resets all Gyroscope interrupt registers to their default values.
@@ -138,9 +189,9 @@ PUB GyroClearInt{}
 PUB GyroData(ptr_x, ptr_y, ptr_z) | tmp[2]
 ' Reads the Gyroscope output registers
     readreg(core#OUT_X_MSB, 6, @tmp)
-    long[ptr_x] := ~~tmp.word[X_AXIS]
-    long[ptr_y] := ~~tmp.word[Y_AXIS]
-    long[ptr_z] := ~~tmp.word[Z_AXIS]
+    long[ptr_x] := ~~tmp.word[X_AXIS] - _gbiasraw[X_AXIS]
+    long[ptr_y] := ~~tmp.word[Y_AXIS] - _gbiasraw[Y_AXIS]
+    long[ptr_z] := ~~tmp.word[Z_AXIS] - _gbiasraw[Z_AXIS]
 
 PUB GyroDataOverrun{}: flag
 ' Flag indicating gyroscope data overrun
