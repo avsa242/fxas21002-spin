@@ -5,7 +5,7 @@
     Description: Driver for the NXP FXAS21002 3DoF Gyroscope
     Copyright (c) 2021
     Started Jun 07, 2021
-    Updated Jun 08, 2021
+    Updated Jun 09, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -74,6 +74,7 @@ VAR
     long _gres, _gbiasraw[GYRO_DOF]
     byte _addr_bits
     byte _opmd_orig
+    byte _temp_scale
 
 OBJ
 
@@ -361,6 +362,12 @@ PUB Reset{} | tmp
 
 PUB Temperature{}: temp
 ' Read chip temperature
+    return adc2temp(tempdata{})
+
+PUB TempData{}: temp_adc
+' Temperature ADC data
+    readreg(core#TEMP, 1, @temp_adc)
+    ~temp_adc
 
 PUB TempDataRate(rate): curr_rate
 ' Set temperature output data rate, in Hz
@@ -370,6 +377,27 @@ PUB TempDataReady{}: flag
 
 PUB TempScale(scale): curr_scl
 ' Set temperature scale used by Temperature method
+'   Valid values:
+'      *C (0): Celsius
+'       F (1): Fahrenheit
+'   Any other value returns the current setting
+    case scale
+        C, F:
+            _temp_scale := scale
+        other:
+            return _temp_scale
+
+PRI adc2temp(temp_word): temp_cal
+' Calculate temperature, using temperature word
+'   Returns: temperature, in hundredths of a degree, in chosen scale
+    temp_cal := temp_word * 100
+    case _temp_scale
+        C:
+            return
+        F:
+            return ((temp_cal * 90) / 50) + 32_00
+        other:
+            return FALSE
 
 PRI readReg(reg_nr, nr_bytes, ptr_buff) | cmd_pkt
 ' Read nr_bytes from the device into ptr_buff
