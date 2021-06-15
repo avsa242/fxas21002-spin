@@ -189,6 +189,20 @@ PUB FIFOMode(mode): curr_mode | prev_mode, new_mode
         mode := ((curr_mode & core#F_MODE_MASK) | mode)
         writereg(core#F_SETUP, 1, @mode)
 
+PUB FIFOThreshold(thresh): curr_thr
+' Set FIFO threshold/watermark level, used in interrupt generation
+'   Valid values: 0..32 (0 effectively disables this functionality)
+'   Any other value polls the chip and returns the current setting
+    curr_thr := 0
+    readreg(core#F_SETUP, 1, @curr_thr)
+    case thresh
+        0..32:
+        other:
+            return (curr_thr & core#F_WMRK_BITS)
+
+    thresh := ((curr_thr & core#F_WMRK_MASK) | thresh)
+    writereg(core#F_SETUP, 1, @thresh)
+
 PUB GyroAxisEnabled(mask): curr_mask
 ' Enable data output for gyroscope (all axes)
 
