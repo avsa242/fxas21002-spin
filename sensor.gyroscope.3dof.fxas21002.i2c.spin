@@ -5,7 +5,7 @@
     Description: Driver for the NXP FXAS21002 3DoF Gyroscope
     Copyright (c) 2021
     Started Jun 07, 2021
-    Updated Jun 09, 2021
+    Updated Jun 15, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -74,6 +74,10 @@ CON
     INT_PP          = 0
     INT_OD          = 1
 
+' FIFO modes
+    BYPASS          = 0
+    FIFO            = 1
+    FIFO_ONE        = 2
 
 VAR
 
@@ -158,6 +162,32 @@ PUB CalibrateGyro{} | axis, orig_scl, orig_dr, tmpx, tmpy, tmpz, tmp[GYRO_DOF], 
 PUB DeviceID{}: id
 ' Read device identification
     readreg(core#WHO_AM_I, 1, @id)
+
+PUB FIFOMode(mode): curr_mode | prev_mode, new_mode
+' Set FIFO operation mode
+'   Valid values:
+'      *BYPASS (0): FIFO disabled
+'       FIFO (1): FIFO/circular buffer mode
+'       FIFO_ONE (2): fill FIFO buffer, then stop when full
+'   Any other value polls the chip and returns the current setting
+    curr_mode := 0
+    readreg(core#F_SETUP, 1, @curr_mode)
+    case mode
+        BYPASS, FIFO, FIFO_ONE:
+            mode <<= core#F_MODE
+            new_mode := mode
+        other:
+            return ((curr_mode >> core#F_MODE) & core#F_MODE_BITS)
+
+    prev_mode := ((curr_mode >> core#F_MODE) & core#F_MODE_BITS)
+
+    if mode <> BYPASS and prev_mode <> BYPASS   ' can't switch between FIFO and
+        mode := (curr_mode & core#F_MODE_MASK)  '  FIFO_ONE directly, so first
+        writereg(core#F_SETUP, 1, @mode)        '  switch off FIFO, then switch
+        writereg(core#F_SETUP, 1, @new_mode)    '  to the new mode
+    else
+        mode := ((curr_mode & core#F_MODE_MASK) | mode)
+        writereg(core#F_SETUP, 1, @mode)
 
 PUB GyroAxisEnabled(mask): curr_mask
 ' Enable data output for gyroscope (all axes)

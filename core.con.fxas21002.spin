@@ -5,7 +5,7 @@
     Description: HW-specific low-level constants
     Copyright (c) 2021
     Started Jun 07, 2021
-    Updated Jun 08, 2021
+    Updated Jun 15, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -42,7 +42,16 @@ CON
         DRDY        = 1 << ZYXDR
 
     F_STATUS        = $08
+
     F_SETUP         = $09
+    F_SETUP_MASK    = $FF
+        F_MODE      = 6
+        F_WMRK      = 0
+        F_MODE_BITS = %11
+        F_WMRK_BITS = %111111
+        F_MODE_MASK = (F_MODE_BITS << F_MODE) ^ F_SETUP_MASK
+        F_WMRK_MASK = F_WMRK_BITS ^ F_SETUP_MASK
+
     F_EVENT         = $0A
     INT_SRC_FLAG    = $0B
     WHO_AM_I        = $0C
