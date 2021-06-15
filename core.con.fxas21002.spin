@@ -42,6 +42,11 @@ CON
         DRDY        = 1 << ZYXDR
 
     F_STATUS        = $08
+    F_STATUS_MASK   = $FF
+        F_OVF       = 7
+        F_WMKF      = 6
+        F_CNT       = 0
+        F_CNT_BITS  = %111111
 
     F_SETUP         = $09
     F_SETUP_MASK    = $FF

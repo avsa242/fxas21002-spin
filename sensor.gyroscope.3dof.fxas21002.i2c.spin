@@ -203,6 +203,12 @@ PUB FIFOThreshold(thresh): curr_thr
     thresh := ((curr_thr & core#F_WMRK_MASK) | thresh)
     writereg(core#F_SETUP, 1, @thresh)
 
+PUB FIFOUnreadSamples{}: nr_samples
+' Number of unread samples stored in FIFO
+'   Returns: 0..32
+    readreg(core#F_STATUS, 1, @nr_samples)
+    return (nr_samples & core#F_CNT_BITS)
+
 PUB GyroAxisEnabled(mask): curr_mask
 ' Enable data output for gyroscope (all axes)
 
