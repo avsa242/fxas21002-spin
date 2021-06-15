@@ -189,6 +189,12 @@ PUB FIFOMode(mode): curr_mode | prev_mode, new_mode
         mode := ((curr_mode & core#F_MODE_MASK) | mode)
         writereg(core#F_SETUP, 1, @mode)
 
+PUB FIFODataOverrun{}: flag
+' Flag indicating FIFO data has overrun
+'   Returns: TRUE (-1) or FALSE (0)
+    readreg(core#F_STATUS, 1, @flag)
+    return ((flag >> core#F_OVF) & 1) == 1
+
 PUB FIFOThreshold(thresh): curr_thr
 ' Set FIFO threshold/watermark level, used in interrupt generation
 '   Valid values: 0..32 (0 effectively disables this functionality)
