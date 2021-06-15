@@ -195,6 +195,14 @@ PUB FIFODataOverrun{}: flag
     readreg(core#F_STATUS, 1, @flag)
     return ((flag >> core#F_OVF) & 1) == 1
 
+PUB FIFOFull{}: flag
+' Flag indicating FIFO is full
+'   Returns:
+'       FALSE (0): FIFO contains less than FIFOThreshold() samples
+'       TRUE(-1): FIFO contains FIFOThreshold() or more samples
+    readreg(core#F_STATUS, 1, @flag)
+    return ((flag >>core#F_WMKF) & 1) == 1
+
 PUB FIFOThreshold(thresh): curr_thr
 ' Set FIFO threshold/watermark level, used in interrupt generation
 '   Valid values: 0..32 (0 effectively disables this functionality)
