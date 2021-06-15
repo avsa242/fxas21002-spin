@@ -203,6 +203,13 @@ PUB FIFOFull{}: flag
     readreg(core#F_STATUS, 1, @flag)
     return ((flag >>core#F_WMKF) & 1) == 1
 
+PUB FIFOInt{}: int_src
+' Read FIFO interrupts
+'   Bits:
+'       5: FIFO event (overflow, or watermark/threshold level reached)
+'       4..0: number of samples acquired since FIFO event was set
+    readreg(core#F_EVENT, 1, @int_src)
+
 PUB FIFOThreshold(thresh): curr_thr
 ' Set FIFO threshold/watermark level, used in interrupt generation
 '   Valid values: 0..32 (0 effectively disables this functionality)
