@@ -3,12 +3,13 @@
     Filename: sensor.gyroscope.3dof.fxas21002.i2c.spin
     Author: Jesse Burt
     Description: Driver for the NXP FXAS21002 3DoF Gyroscope
-    Copyright (c) 2021
+    Copyright (c) 2022
     Started Jun 07, 2021
-    Updated Jun 15, 2021
+    Updated May 13, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
+#include "sensor.imu.common.spinh"
 
 CON
 
@@ -81,7 +82,7 @@ CON
 
 VAR
 
-    long _gres, _gbiasraw[GYRO_DOF]
+    long _ares, _gres, _gbiasraw[GYRO_DOF]
     byte _addr_bits
     byte _opmd_orig
     byte _temp_scale
@@ -130,34 +131,26 @@ PUB Preset_Active{}
     gyroopmode(ACTIVE)
     gyroscale(250)
 
-PUB CalibrateGyro{} | axis, orig_scl, orig_dr, tmpx, tmpy, tmpz, tmp[GYRO_DOF], samples
-' Calibrate the gyroscope
-    longfill(@axis, 0, 10)                      ' initialize vars to 0
-    orig_scl := gyroscale(-2)                   ' save user's current settings
-    orig_dr := gyrodatarate(-2)
-    gyrobias(0, 0, 0, W)                        ' clear existing bias
+PUB AccelAxisEnabled(axis_mask)
+' Dummy method
 
-    ' set sensor to CAL_G_SCL range, CAL_G_DR Hz data rate
-    gyroscale(CAL_G_SCL)
-    gyrodatarate(CAL_G_DR)
-    samples := CAL_G_DR                         ' samples = DR, for 1 sec time
+PUB AccelBias(x, y, z, rw)
+' Dummy method
 
-    ' accumulate and average approx. 1sec worth of samples
-    repeat samples
-        repeat until gyrodataready{}
-        gyrodata(@tmpx, @tmpy, @tmpz)
-        tmp[X_AXIS] += tmpx
-        tmp[Y_AXIS] += tmpy
-        tmp[Z_AXIS] += tmpz
+PUB AccelData(x, y, z)
+' Dummy method
 
-    repeat axis from X_AXIS to Z_AXIS           ' calc avg
-        tmp[axis] /= samples
+PUB AccelDataRate(Hz)
+' Dummy method
 
-    ' update offsets
-    gyrobias(tmp[X_AXIS], tmp[Y_AXIS], tmp[Z_AXIS], W)
+PUB AccelDataReady{}
+' Dummy method
 
-    gyroscale(orig_scl)                         ' restore user's settings
-    gyrodatarate(orig_dr)
+PUB AccelDataOverrun{}
+' Dummy method
+
+PUB AccelScale(scale)
+' Dummy method
 
 PUB DeviceID{}: id
 ' Read device identification
@@ -300,14 +293,6 @@ PUB GyroDataReady{}: flag
     flag := 0
     readreg(core#DR_STATUS, 1, @flag)
     return ((flag & core#DRDY) <> 0)
-
-PUB GyroDPS(ptr_x, ptr_y, ptr_z) | tmp[GYRO_DOF]
-' Read the Gyroscope output registers and scale the outputs to
-'   micro degrees per second
-    gyrodata(@tmp[X_AXIS], @tmp[Y_AXIS], @tmp[Z_AXIS])
-    long[ptr_x] := tmp[X_AXIS] * _gres
-    long[ptr_y] := tmp[Y_AXIS] * _gres
-    long[ptr_z] := tmp[Z_AXIS] * _gres
 
 PUB GyroHighPassFilter(freq): curr_freq | hpf_en
 ' Set Gyroscope high-pass filter cutoff frequency, in Hz
@@ -624,6 +609,21 @@ PUB GyroScale(scale): curr_scl
     writereg(core#CTRL_REG0, 1, @scale)
 
     restoreopmode{}
+
+PUB MagBias(x, y, z, rw)
+' Dummy method
+
+PUB MagData(x, y, z)
+' Dummy method
+
+PUB MagDataRate(hz)
+' Dummy method
+
+PUB MagDataReady{}
+' Dummy method
+
+PUB MagScale(scale)
+' Dummy method
 
 PUB Reset{} | tmp
 ' Reset the device

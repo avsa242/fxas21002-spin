@@ -3,20 +3,19 @@
     Filename: sensor.gyroscope.3dof.fxas21002.i2c.spin2
     Author: Jesse Burt
     Description: Driver for the NXP FXAS21002 3DoF Gyroscope (P2 version)
-    Copyright (c) 2021
+    Copyright (c) 2022
     Started Jun 15, 2021
-    Updated Jun 15, 2021
+    Updated May 13, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
+#include "sensor.imu.common.spin2h"
 
 CON
 
     SLAVE_WR        = core.SLAVE_ADDR
     SLAVE_RD        = core.SLAVE_ADDR|1
 
-    DEF_SCL         = 28
-    DEF_SDA         = 29
     DEF_HZ          = 100_000
     DEF_ADDR        = %0
     I2C_MAX_FREQ    = core.I2C_MAX_FREQ
@@ -81,7 +80,7 @@ CON
 
 VAR
 
-    long _gres, _gbiasraw[GYRO_DOF]
+    long _ares, _gres, _gbiasraw[GYRO_DOF]
     byte _addr_bits
     byte _opmd_orig
     byte _temp_scale
@@ -129,40 +128,32 @@ PUB Preset_Active()
     gyroopmode(ACTIVE)
     gyroscale(250)
 
-PUB CalibrateGyro() | axis, orig_scl, orig_dr, tmpx, tmpy, tmpz, tmp[GYRO_DOF], samples
-' Calibrate the gyroscope
-    longfill(@axis, 0, 10)                      ' initialize vars to 0
-    orig_scl := gyroscale(-2)                   ' save user's current settings
-    orig_dr := gyrodatarate(-2)
-    gyrobias(0, 0, 0, W)                        ' clear existing bias
+PUB AccelAxisEnabled(axis_mask=-2)
+' Dummy method
 
-    ' set sensor to CAL_G_SCL range, CAL_G_DR Hz data rate
-    gyroscale(CAL_G_SCL)
-    gyrodatarate(CAL_G_DR)
-    samples := CAL_G_DR                         ' samples = DR, for 1 sec time
+PUB AccelBias(x, y, z, rw=R)
+' Dummy method
 
-    ' accumulate and average approx. 1sec worth of samples
-    repeat samples
-        repeat until gyrodataready()
-        gyrodata(@tmpx, @tmpy, @tmpz)
-        tmp[X_AXIS] += tmpx
-        tmp[Y_AXIS] += tmpy
-        tmp[Z_AXIS] += tmpz
+PUB AccelData(x, y, z)
+' Dummy method
 
-    repeat axis from X_AXIS to Z_AXIS           ' calc avg
-        tmp[axis] /= samples
+PUB AccelDataRate(hz=-2)
+' Dummy method
 
-    ' update offsets
-    gyrobias(tmp[X_AXIS], tmp[Y_AXIS], tmp[Z_AXIS], W)
+PUB AccelDataReady()
+' Dummy method
 
-    gyroscale(orig_scl)                         ' restore user's settings
-    gyrodatarate(orig_dr)
+PUB AccelDataOverrun()
+' Dummy method
+
+PUB AccelScale(scale=-2)
+' Dummy method
 
 PUB DeviceID(): id
 ' Read device identification
     readreg(core.WHO_AM_I, 1, @id)
 
-PUB FIFOMode(mode): curr_mode | prev_mode, new_mode
+PUB FIFOMode(mode=-2): curr_mode | prev_mode, new_mode
 ' Set FIFO operation mode
 '   Valid values:
 '      *BYPASS (0): FIFO disabled
@@ -209,7 +200,7 @@ PUB FIFOInt(): int_src
 '       4..0: number of samples acquired since FIFO event was set
     readreg(core.F_EVENT, 1, @int_src)
 
-PUB FIFOThreshold(thresh): curr_thr
+PUB FIFOThreshold(thresh=-2): curr_thr
 ' Set FIFO threshold/watermark level, used in interrupt generation
 '   Valid values: 0..32 (0 effectively disables this functionality)
 '   Any other value polls the chip and returns the current setting
@@ -229,10 +220,10 @@ PUB FIFOUnreadSamples(): nr_samples
     readreg(core.F_STATUS, 1, @nr_samples)
     return (nr_samples & core.F_CNT_BITS)
 
-PUB GyroAxisEnabled(mask): curr_mask
+PUB GyroAxisEnabled(mask=-2)
 ' Enable data output for gyroscope (all axes)
 
-PUB GyroBias(gxbias, gybias, gzbias, rw)
+PUB GyroBias(gxbias, gybias, gzbias, rw=R)
 ' Read or write/manually set Gyroscope calibration offset values
 '   Valid values:
 '       rw:
@@ -273,7 +264,7 @@ PUB GyroDataOverrun(): flag
     readreg(core.DR_STATUS, 1, @flag)
     return ((flag & core.ORUN) <> 0)
 
-PUB GyroDataRate(rate): curr_rate
+PUB GyroDataRate(rate=-2): curr_rate
 ' Set gyroscope output data rate, in Hz
 '   Valid values:
 '       12, 25, 50, 100, 200, 400, 800
@@ -300,15 +291,7 @@ PUB GyroDataReady(): flag
     readreg(core.DR_STATUS, 1, @flag)
     return ((flag & core.DRDY) <> 0)
 
-PUB GyroDPS(ptr_x, ptr_y, ptr_z) | tmp[GYRO_DOF]
-' Read the Gyroscope output registers and scale the outputs to
-'   micro degrees per second
-    gyrodata(@tmp[X_AXIS], @tmp[Y_AXIS], @tmp[Z_AXIS])
-    long[ptr_x] := tmp[X_AXIS] * _gres
-    long[ptr_y] := tmp[Y_AXIS] * _gres
-    long[ptr_z] := tmp[Z_AXIS] * _gres
-
-PUB GyroHighPassFilter(freq): curr_freq | hpf_en
+PUB GyroHighPassFilter(freq=-2): curr_freq | hpf_en
 ' Set Gyroscope high-pass filter cutoff frequency, in Hz
 '   Valid values: dependent on GyroDataRate(), see table below
 '   Any other value polls the chip and returns the current setting
@@ -399,13 +382,13 @@ PUB GyroHighPassFilter(freq): curr_freq | hpf_en
     writereg(core.CTRL_REG0, 1, @freq)
     restoreopmode()
 
-PUB GyroInactiveDur(duration): curr_dur
+PUB GyroInactiveDur(duration=-2)
 ' Set gyroscope inactivity timer (use GyroInactiveSleep to define behavior on inactivity)
 
-PUB GyroInactiveThr(thresh): curr_thr
+PUB GyroInactiveThr(thresh=-2)
 ' Set gyroscope inactivity threshold (use GyroInactiveSleep to define behavior on inactivity)
 
-PUB GyroInactiveSleep(state): curr_state
+PUB GyroInactiveSleep(state=-2)
 ' Enable gyroscope sleep mode when inactive (see GyroActivityThr)
 
 PUB GyroInt(): int_src
@@ -420,7 +403,7 @@ PUB GyroInt(): int_src
 '       0: polarity of X interrupt (0: positive, 1: negative)
     readreg(core.RT_SRC, 1, @int_src)
 
-PUB GyroIntActiveState(state): curr_state
+PUB GyroIntActiveState(state=-2): curr_state
 ' Set gyroscope interrupt pin active state/polarity
 '   Valid values:
 '       ACT_LOW (0): active low
@@ -437,7 +420,7 @@ PUB GyroIntActiveState(state): curr_state
     state := ((curr_state & core.IPOL_MASK) | state)
     writereg(core.CTRL_REG2, 1, @state)
 
-PUB GyroIntMask(mask): curr_mask | reg2, rtcfg
+PUB GyroIntMask(mask=-2): curr_mask | reg2, rtcfg
 ' Set gyroscope interrupt mask
 '   Bits 11..0
 '       11: latch interrupts
@@ -469,7 +452,7 @@ PUB GyroIntMask(mask): curr_mask | reg2, rtcfg
     mask := ((curr_mask.byte[1] & core.ELE_EFE_MASK) | rtcfg)
     writereg(core.RT_CFG, 1, @mask)
 
-PUB GyroIntOutMode(mode) : curr_mode
+PUB GyroIntOutMode(mode=-2): curr_mode
 ' Set gyroscope interrupt pin output driver mode
 '   Valid values:
 '       INT_PP (0): push-pull
@@ -486,10 +469,10 @@ PUB GyroIntOutMode(mode) : curr_mode
     mode := ((curr_mode & core.PP_OD_MASK) | mode)
     writereg(core.CTRL_REG2, 1, @mode)
 
-PUB GyroIntSelect(mode): curr_mode
+PUB GyroIntSelect(mode=-2)
 ' Set gyroscope interrupt generator selection
 
-PUB GyroIntThresh(x, y, z, rw) | gscl, lsb, tmp, axis
+PUB GyroIntThresh(x, y, z, rw=R) | gscl, lsb, tmp, axis
 ' Set gyroscope interrupt threshold, in micro-dps (unsigned)
 '   Valid values: 0..(full-scale * 1_000_000)
 '   Any other value will be clamped to min/max limits
@@ -521,7 +504,7 @@ PUB GyroIntThresh(x, y, z, rw) | gscl, lsb, tmp, axis
             long[y] := tmp * lsb
             long[z] := tmp * lsb
 
-PUB GyroLowPassFilter(freq): curr_freq
+PUB GyroLowPassFilter(freq=-2): curr_freq
 ' Set gyroscope output data low-pass filter cutoff frequency, in Hz
 '   Valid values:
 '       4..256 (available values depend on GyroDataRate() setting)
@@ -582,10 +565,10 @@ PUB GyroLowPassFilter(freq): curr_freq
     writereg(core.CTRL_REG0, 1, @freq)
     restoreopmode()
 
-PUB GyroLowPower(state): curr_state
+PUB GyroLowPower(state=-2)
 ' Enable low
 
-PUB GyroOpMode(mode): curr_mode
+PUB GyroOpMode(mode=-2): curr_mode
 ' Set gyroscope operating mode
 '   Valid values:
 '       SLEEP (0): lowest-power/sleep mode (no data acquisition)
@@ -602,7 +585,7 @@ PUB GyroOpMode(mode): curr_mode
     mode := ((curr_mode & core.STATE_MASK) | mode)
     writereg(core.CTRL_REG1, 1, @mode)
 
-PUB GyroScale(scale): curr_scl
+PUB GyroScale(scale=-2): curr_scl
 ' Set gyroscope full-scale range, in degrees per second
 '   Valid values: 250, 500, 1000, 2000
 '   Any other value polls the chip and returns the current setting
@@ -623,6 +606,21 @@ PUB GyroScale(scale): curr_scl
     writereg(core.CTRL_REG0, 1, @scale)
 
     restoreopmode()
+
+PUB MagBias(x, y, z, rw=R)
+' Dummy method
+
+PUB MagData(x, y, z)
+' Dummy method
+
+PUB MagDataRate(hz=-2)
+' Dummy method
+
+PUB MagDataReady()
+' Dummy method
+
+PUB MagScale(scale=-2)
+' Dummy method
 
 PUB Reset() | tmp
 ' Reset the device
