@@ -23,14 +23,19 @@ This is a P8X32A/Propeller, P2X8C4M64P/Propeller 2 driver object for the NXP FXA
 P1/SPIN1:
 * spin-standard-library
 * 1 extra core/cog for the PASM I2C engine
+* sensor.imu.common.spinh (provided by spin-standard-library)
 
 P2/SPIN2:
 * p2-spin-standard-library
+* sensor.imu.common.spin2h (provided by p2-spin-standard-library)
 
 ## Compiler Compatibility
 
-* P1/SPIN1: OpenSpin (tested with 1.00.81), FlexSpin (tested with 5.5.0)
-* P2/SPIN2: FlexSpin (tested with 5.5.0)
+* P1/SPIN1 FlexSpin (bytecode): OK, tested with 5.9.10-beta
+* P1/SPIN1 FlexSpin (native): OK, tested with 5.9.10-beta
+* P2/SPIN2 FlexSpin (nu-code): FTBFS
+* P2/SPIN2 FlexSpin (native): OK, tested with 5.9.10-beta
+* P1/SPIN1 OpenSpin (bytecode): Untested (deprecated)
 * ~~BST~~ (incompatible - no preprocessor)
 * ~~Propeller Tool~~ (incompatible - no preprocessor)
 * ~~PNut~~ (incompatible - no preprocessor)
@@ -39,6 +44,3 @@ P2/SPIN2:
 
 * Very early in development - may malfunction, or outright fail to build
 
-## TODO
-
-- [ ] TBD
