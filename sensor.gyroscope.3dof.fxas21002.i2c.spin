@@ -10,6 +10,7 @@
     --------------------------------------------
 }
 #include "sensor.imu.common.spinh"
+#include "sensor.temp_rh.common.spinh"
 
 CON
 
@@ -85,7 +86,6 @@ VAR
     long _ares, _gres, _gbiasraw[GYRO_DOF]
     byte _addr_bits
     byte _opmd_orig
-    byte _temp_scale
 
 OBJ
 
@@ -630,36 +630,28 @@ PUB Reset{} | tmp
     tmp := core#RESET
     writereg(core#CTRL_REG1, 1, @tmp)
 
-PUB Temperature{}: temp
-' Read chip temperature
-    return adc2temp(tempdata{})
+PUB RHData{}: rh_word
+' dummy method
+
+PUB RHWord2Pct(rh_word)
+' dummy method
 
 PUB TempData{}: temp_adc
 ' Temperature ADC data
     readreg(core#TEMP, 1, @temp_adc)
     ~temp_adc
 
-PUB TempScale(scale): curr_scl
-' Set temperature scale used by Temperature method
-'   Valid values:
-'      *C (0): Celsius
-'       F (1): Fahrenheit
-'   Any other value returns the current setting
-    case scale
-        C, F:
-            _temp_scale := scale
-        other:
-            return _temp_scale
-
-PRI adc2temp(temp_word): temp_cal
-' Calculate temperature, using temperature word
+PUB TempWord2Deg(temp_word): temp
+' Convert temperature ADC word to temperature
 '   Returns: temperature, in hundredths of a degree, in chosen scale
-    temp_cal := temp_word * 100
+    temp := temp_word * 100
     case _temp_scale
         C:
-            return
+            return temp
         F:
-            return ((temp_cal * 90) / 50) + 32_00
+            return ((temp * 90) / 50) + 32_00
+        K:
+            return (temp + 273_15)
         other:
             return FALSE
 
