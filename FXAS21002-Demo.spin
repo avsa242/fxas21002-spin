@@ -3,9 +3,9 @@
     Filename: FXAS21002-Demo.spin
     Author: Jesse Burt
     Description: Demo of the FXAS21002 driver
-    Copyright (c) 2021
+    Copyright (c) 2022
     Started Jun 07, 2021
-    Updated Jun 09, 2021
+    Updated May 14, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -36,7 +36,7 @@ OBJ
     ser     : "com.serial.terminal.ansi"
     time    : "time"
     int     : "string.integer"
-    gyro    : "sensor.gyroscope.3dof.fxas21002.i2c"
+    gyro    : "sensor.gyroscope.3dof.fxas21002"
 
 PUB Main{}
 
