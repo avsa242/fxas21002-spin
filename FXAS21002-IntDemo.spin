@@ -1,27 +1,28 @@
 {
     --------------------------------------------
-    Filename: FXAS21002-Demo.spin2
+    Filename: FXAS21002-IntDemo.spin
     Author: Jesse Burt
-    Description: Demo of the FXAS21002 driver (P2 version)
+    Description: Demo of the FXAS21002 driver:
+        interrupt functionality
     Copyright (c) 2022
-    Started Jun 15, 2021
-    Updated May 14, 2022
+    Started Jun 9, 2021
+    Updated Jul 9, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
 
 CON
 
-    _clkfreq    = cfg._clkfreq_def
-    _xtlfreq    = cfg._xtlfreq
+    _clkmode    = cfg#_clkmode
+    _xinfreq    = cfg#_xinfreq
 
 ' -- User-modifiable constants
-    LED         = cfg.LED1
-    SER_BAUD    = 2_000_000
+    LED         = cfg#LED1
+    SER_BAUD    = 115_200
 
 ' I2C
-    SCL_PIN     = 24
-    SDA_PIN     = 25
+    SCL_PIN     = 28
+    SDA_PIN     = 29
     I2C_FREQ    = 400_000
     ADDR_BITS   = %1
 ' --
@@ -32,27 +33,38 @@ CON
 
 OBJ
 
-    cfg     : "core.con.boardcfg.p2eval"
+    cfg     : "core.con.boardcfg.flip"
     ser     : "com.serial.terminal.ansi"
+    time    : "time"
     int     : "string.integer"
     gyro    : "sensor.gyroscope.3dof.fxas21002"
 
-PUB Main()
+PUB Main{}
 
-    setup()
-    gyro.preset_active()                        ' default settings, but enable
+    setup{}
+    gyro.preset_active{}                        ' default settings, but enable
                                                 ' measurements, and set scale
                                                 ' factor
+
+'   set threshold in micro-degrees per second. The axes' thresholds can't be
+'   independently set - all three are set to the value passed in the X-axis
+'   parameter (first param):
+    gyro.gyrointthresh(100_000000, 0, 0, 1)
+    gyro.gyrointmask(gyro#INT_ZTHS)
+
     repeat
         ser.position(0, 3)
-        gyrocalc()
+        gyrocalc{}
 
-        if ser.rxcheck() == "c"                 ' press the 'c' key in the demo
-            calibrate()                         ' to calibrate sensor offsets
+        ser.position(0, 4)
+        ser.bin(gyro.gyroint{}, 7)              ' show interrupt flags
 
-PUB GyroCalc() | gx, gy, gz
+        if ser.rxcheck{} == "c"                 ' press the 'c' key in the demo
+            calibrate{}                         ' to calibrate sensor offsets
 
-    repeat until gyro.gyrodataready()           ' wait for new sensor data set
+PUB GyroCalc{} | gx, gy, gz
+
+    repeat until gyro.gyrodataready{}           ' wait for new sensor data set
     gyro.gyrodps(@gx, @gy, @gz)                 ' read calculated sensor data
     ser.str(string("Gyro (dps):"))
     ser.positionx(DAT_X_COL)
@@ -61,16 +73,16 @@ PUB GyroCalc() | gx, gy, gz
     decimal(gy, 1000000)
     ser.positionx(DAT_Z_COL)
     decimal(gz, 1000000)
-    ser.clearline()
-    ser.newline()
+    ser.clearline{}
+    ser.newline{}
 
-PUB Calibrate()
+PUB Calibrate{}
 
     ser.position(0, 7)
     ser.str(string("Calibrating..."))
-    gyro.calibrategyro()
+    gyro.calibrategyro{}
     ser.positionx(0)
-    ser.clearline()
+    ser.clearline{}
 
 PRI Decimal(scaled, divisor) | whole[4], part[4], places, tmp, sign
 ' Display a scaled up number as a decimal
@@ -90,19 +102,19 @@ PRI Decimal(scaled, divisor) | whole[4], part[4], places, tmp, sign
         places++
     until tmp == 1
     scaled //= divisor
-    part := int.deczeroed(abs(scaled), places)
+    part := int.deczeroed(||(scaled), places)
 
     ser.char(sign)
-    ser.dec(abs(whole))
+    ser.dec(||(whole))
     ser.char(".")
     ser.str(part)
     ser.chars(" ", 5)
 
-PUB Setup()
+PUB Setup{}
 
     ser.start(SER_BAUD)
-    waitms(30)
-    ser.clear()
+    time.msleep(30)
+    ser.clear{}
     ser.strln(string("Serial terminal started"))
 
     if gyro.startx(SCL_PIN, SDA_PIN, I2C_FREQ, ADDR_BITS)
