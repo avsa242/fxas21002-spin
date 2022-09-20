@@ -96,14 +96,14 @@ OBJ
     core: "core.con.fxas21002"                  ' hw-specific low-level const's
     time: "time"                                ' basic timing functions
 
-PUB Null{}
+PUB null{}
 ' This is not a top-level object
 
 PUB Start{}: status
 ' Start using "standard" Propeller I2C pins and 100kHz
     return startx(DEF_SCL, DEF_SDA, DEF_HZ, DEF_ADDR)
 
-PUB Startx(SCL_PIN, SDA_PIN, I2C_HZ, ADDR_BITS): status
+PUB startx(SCL_PIN, SDA_PIN, I2C_HZ, ADDR_BITS): status
 ' Start using custom IO pins and I2C bus frequency
     if lookdown(SCL_PIN: 0..31) and lookdown(SDA_PIN: 0..31) and {
 }   I2C_HZ =< core#I2C_MAX_FREQ and lookdown(ADDR_BITS: 0, 1)
@@ -119,47 +119,48 @@ PUB Startx(SCL_PIN, SDA_PIN, I2C_HZ, ADDR_BITS): status
     ' Lastly - make sure you have at least one free core/cog 
     return FALSE
 
-PUB Stop{}
-
+PUB stop{}
+' Stop the driver
     i2c.deinit{}
+    _opmd_orig := 0
 
-PUB Defaults{}
+PUB defaults{}
 ' Set factory defaults
     reset{}
 
-PUB Preset_Active{}
+PUB preset_active{}
 ' Preset: Enable sensor data acquisition and set:
 '   full scale: 250dps
     reset{}
     gyroopmode(ACTIVE)
     gyroscale(250)
 
-PUB AccelAxisEnabled(axis_mask)
+PUB accelaxisenabled(axis_mask)
 ' Dummy method
 
-PUB AccelBias(x, y, z, rw)
+PUB accelbias(x, y, z, rw)
 ' Dummy method
 
-PUB AccelData(x, y, z)
+PUB acceldata(x, y, z)
 ' Dummy method
 
-PUB AccelDataRate(Hz)
+PUB acceldatarate(Hz)
 ' Dummy method
 
-PUB AccelDataReady{}
+PUB acceldataready{}
 ' Dummy method
 
-PUB AccelDataOverrun{}
+PUB acceldataoverrun{}
 ' Dummy method
 
-PUB AccelScale(scale)
+PUB accelscale(scale)
 ' Dummy method
 
-PUB DeviceID{}: id
+PUB deviceid{}: id
 ' Read device identification
     readreg(core#WHO_AM_I, 1, @id)
 
-PUB FIFOMode(mode): curr_mode | prev_mode, new_mode
+PUB fifomode(mode): curr_mode | prev_mode, new_mode
 ' Set FIFO operation mode
 '   Valid values:
 '      *BYPASS (0): FIFO disabled
@@ -185,13 +186,13 @@ PUB FIFOMode(mode): curr_mode | prev_mode, new_mode
         mode := ((curr_mode & core#F_MODE_MASK) | mode)
         writereg(core#F_SETUP, 1, @mode)
 
-PUB FIFODataOverrun{}: flag
+PUB fifodataoverrun{}: flag
 ' Flag indicating FIFO data has overrun
 '   Returns: TRUE (-1) or FALSE (0)
     readreg(core#F_STATUS, 1, @flag)
     return ((flag >> core#F_OVF) & 1) == 1
 
-PUB FIFOFull{}: flag
+PUB fifofull{}: flag
 ' Flag indicating FIFO is full
 '   Returns:
 '       FALSE (0): FIFO contains less than FIFOThreshold() samples
@@ -199,14 +200,14 @@ PUB FIFOFull{}: flag
     readreg(core#F_STATUS, 1, @flag)
     return ((flag >>core#F_WMKF) & 1) == 1
 
-PUB FIFOInt{}: int_src
+PUB fifoint{}: int_src
 ' Read FIFO interrupts
 '   Bits:
 '       5: FIFO event (overflow, or watermark/threshold level reached)
 '       4..0: number of samples acquired since FIFO event was set
     readreg(core#F_EVENT, 1, @int_src)
 
-PUB FIFOThreshold(thresh): curr_thr
+PUB fifothreshold(thresh): curr_thr
 ' Set FIFO threshold/watermark level, used in interrupt generation
 '   Valid values: 0..32 (0 effectively disables this functionality)
 '   Any other value polls the chip and returns the current setting
@@ -220,16 +221,16 @@ PUB FIFOThreshold(thresh): curr_thr
     thresh := ((curr_thr & core#F_WMRK_MASK) | thresh)
     writereg(core#F_SETUP, 1, @thresh)
 
-PUB FIFOUnreadSamples{}: nr_samples
+PUB fifounreadsamples{}: nr_samples
 ' Number of unread samples stored in FIFO
 '   Returns: 0..32
     readreg(core#F_STATUS, 1, @nr_samples)
     return (nr_samples & core#F_CNT_BITS)
 
-PUB GyroAxisEnabled(mask): curr_mask
+PUB gyroaxisenabled(mask): curr_mask
 ' Enable data output for gyroscope (all axes)
 
-PUB GyroBias(gxbias, gybias, gzbias, rw)
+PUB gyrobias(gxbias, gybias, gzbias, rw)
 ' Read or write/manually set Gyroscope calibration offset values
 '   Valid values:
 '       rw:
@@ -257,20 +258,20 @@ PUB GyroBias(gxbias, gybias, gzbias, rw)
                     _gbias[Z_AXIS] := gzbias
                 other:
 
-PUB GyroData(ptr_x, ptr_y, ptr_z) | tmp[2]
+PUB gyrodata(ptr_x, ptr_y, ptr_z) | tmp[2]
 ' Reads the Gyroscope output registers
     readreg(core#OUT_X_MSB, 6, @tmp)
     long[ptr_x] := ~~tmp.word[X_AXIS] - _gbias[X_AXIS]
     long[ptr_y] := ~~tmp.word[Y_AXIS] - _gbias[Y_AXIS]
     long[ptr_z] := ~~tmp.word[Z_AXIS] - _gbias[Z_AXIS]
 
-PUB GyroDataOverrun{}: flag
+PUB gyrodataoverrun{}: flag
 ' Flag indicating gyroscope data overrun
     flag := 0
     readreg(core#DR_STATUS, 1, @flag)
     return ((flag & core#ORUN) <> 0)
 
-PUB GyroDataRate(rate): curr_rate
+PUB gyrodatarate(rate): curr_rate
 ' Set gyroscope output data rate, in Hz
 '   Valid values:
 '       12, 25, 50, 100, 200, 400, 800
@@ -291,13 +292,13 @@ PUB GyroDataRate(rate): curr_rate
 
     restoreopmode{}
 
-PUB GyroDataReady{}: flag
+PUB gyrodataready{}: flag
 ' Flag indicating new gyroscope data available
     flag := 0
     readreg(core#DR_STATUS, 1, @flag)
     return ((flag & core#DRDY) <> 0)
 
-PUB GyroHighPassFilter(freq): curr_freq | hpf_en
+PUB gyrohighpassfilter(freq): curr_freq | hpf_en
 ' Set Gyroscope high-pass filter cutoff frequency, in Hz
 '   Valid values: dependent on GyroDataRate(), see table below
 '   Any other value polls the chip and returns the current setting
@@ -388,16 +389,16 @@ PUB GyroHighPassFilter(freq): curr_freq | hpf_en
     writereg(core#CTRL_REG0, 1, @freq)
     restoreopmode{}
 
-PUB GyroInactiveDur(duration): curr_dur
+PUB gyroinactivedur(duration): curr_dur
 ' Set gyroscope inactivity timer (use GyroInactiveSleep to define behavior on inactivity)
 
-PUB GyroInactiveThr(thresh): curr_thr
+PUB gyroinactivethr(thresh): curr_thr
 ' Set gyroscope inactivity threshold (use GyroInactiveSleep to define behavior on inactivity)
 
-PUB GyroInactiveSleep(state): curr_state
+PUB gyroinactivesleep(state): curr_state
 ' Enable gyroscope sleep mode when inactive (see GyroActivityThr)
 
-PUB GyroInt{}: int_src
+PUB gyroint{}: int_src
 ' Read gyroscope interrupts
 '   Bit 6..0
 '       6 (INT_THS): threshold interrupt detected on one or more axes
@@ -409,7 +410,7 @@ PUB GyroInt{}: int_src
 '       0: polarity of X interrupt (0: positive, 1: negative)
     readreg(core#RT_SRC, 1, @int_src)
 
-PUB GyroIntActiveState(state): curr_state
+PUB gyrointactivestate(state): curr_state
 ' Set gyroscope interrupt pin active state/polarity
 '   Valid values:
 '       ACT_LOW (0): active low
@@ -426,7 +427,7 @@ PUB GyroIntActiveState(state): curr_state
     state := ((curr_state & core#IPOL_MASK) | state)
     writereg(core#CTRL_REG2, 1, @state)
 
-PUB GyroIntMask(mask): curr_mask | reg2, rtcfg
+PUB gyrointmask(mask): curr_mask | reg2, rtcfg
 ' Set gyroscope interrupt mask
 '   Bits 11..0
 '       11: latch interrupts
@@ -458,7 +459,7 @@ PUB GyroIntMask(mask): curr_mask | reg2, rtcfg
     mask := ((curr_mask.byte[1] & core#ELE_EFE_MASK) | rtcfg)
     writereg(core#RT_CFG, 1, @mask)
 
-PUB GyroIntOutMode(mode) : curr_mode
+PUB gyrointoutmode(mode) : curr_mode
 ' Set gyroscope interrupt pin output driver mode
 '   Valid values:
 '       INT_PP (0): push-pull
@@ -475,10 +476,10 @@ PUB GyroIntOutMode(mode) : curr_mode
     mode := ((curr_mode & core#PP_OD_MASK) | mode)
     writereg(core#CTRL_REG2, 1, @mode)
 
-PUB GyroIntSelect(mode): curr_mode
+PUB gyrointselect(mode): curr_mode
 ' Set gyroscope interrupt generator selection
 
-PUB GyroIntThresh(x, y, z, rw) | gscl, lsb, tmp, axis
+PUB gyrointthresh(x, y, z, rw) | gscl, lsb, tmp, axis
 ' Set gyroscope interrupt threshold, in micro-dps (unsigned)
 '   Valid values: 0..(full-scale * 1_000_000)
 '   Any other value will be clamped to min/max limits
@@ -510,7 +511,7 @@ PUB GyroIntThresh(x, y, z, rw) | gscl, lsb, tmp, axis
             long[y] := tmp * lsb
             long[z] := tmp * lsb
 
-PUB GyroLowPassFilter(freq): curr_freq
+PUB gyrolowpassfilter(freq): curr_freq
 ' Set gyroscope output data low-pass filter cutoff frequency, in Hz
 '   Valid values:
 '       4..256 (available values depend on GyroDataRate() setting)
@@ -571,10 +572,10 @@ PUB GyroLowPassFilter(freq): curr_freq
     writereg(core#CTRL_REG0, 1, @freq)
     restoreopmode{}
 
-PUB GyroLowPower(state): curr_state
+PUB gyrolowpower(state): curr_state
 ' Enable low
 
-PUB GyroOpMode(mode): curr_mode
+PUB gyroopmode(mode): curr_mode
 ' Set gyroscope operating mode
 '   Valid values:
 '       SLEEP (0): lowest-power/sleep mode (no data acquisition)
@@ -591,7 +592,7 @@ PUB GyroOpMode(mode): curr_mode
     mode := ((curr_mode & core#STATE_MASK) | mode)
     writereg(core#CTRL_REG1, 1, @mode)
 
-PUB GyroScale(scale): curr_scl
+PUB gyroscale(scale): curr_scl
 ' Set gyroscope full-scale range, in degrees per second
 '   Valid values: 250, 500, 1000, 2000
 '   Any other value polls the chip and returns the current setting
@@ -613,38 +614,38 @@ PUB GyroScale(scale): curr_scl
 
     restoreopmode{}
 
-PUB MagBias(x, y, z, rw)
+PUB magbias(x, y, z, rw)
 ' Dummy method
 
-PUB MagData(x, y, z)
+PUB magdata(x, y, z)
 ' Dummy method
 
-PUB MagDataRate(hz)
+PUB magdatarate(hz)
 ' Dummy method
 
-PUB MagDataReady{}
+PUB magdataready{}
 ' Dummy method
 
-PUB MagScale(scale)
+PUB magscale(scale)
 ' Dummy method
 
-PUB Reset{} | tmp
+PUB reset{} | tmp
 ' Reset the device
     tmp := core#RESET
     writereg(core#CTRL_REG1, 1, @tmp)
 
-PUB RHData{}: rh_word
+PUB rhdata{}: rh_word
 ' dummy method
 
-PUB RHWord2Pct(rh_word)
+PUB rhword2pct(rh_word)
 ' dummy method
 
-PUB TempData{}: temp_adc
+PUB tempdata{}: temp_adc
 ' Temperature ADC data
     readreg(core#TEMP, 1, @temp_adc)
     ~temp_adc
 
-PUB TempWord2Deg(temp_word): temp
+PUB tempword2deg(temp_word): temp
 ' Convert temperature ADC word to temperature
 '   Returns: temperature, in hundredths of a degree, in chosen scale
     temp := temp_word * 100
@@ -658,7 +659,7 @@ PUB TempWord2Deg(temp_word): temp
         other:
             return FALSE
 
-PRI readReg(reg_nr, nr_bytes, ptr_buff) | cmd_pkt
+PRI readreg(reg_nr, nr_bytes, ptr_buff) | cmd_pkt
 ' Read nr_bytes from the device into ptr_buff
     case reg_nr                                 ' validate register num
         $00..$15:
@@ -676,19 +677,19 @@ PRI readReg(reg_nr, nr_bytes, ptr_buff) | cmd_pkt
         other:                                  ' invalid reg_nr
             return
 
-PRI restoreOpMode{}
+PRI restoreopmode{}
 ' Restore previously cached opmode, if it wasn't STANDBY
     if _opmd_orig <> STANDBY                     ' if original opmode wasn't
         gyroopmode(_opmd_orig)                   '   STANDBY, switch back to it
 
-PRI standby_saveOpMode{}
+PRI standby_saveopmode{}
 ' Set chip to STANDBY, if it isn't already, and cache the previous opmode
 '   so it can be restored later
     _opmd_orig := gyroopmode(-2)                 ' must be in STANDBY or SLEEP
     if _opmd_orig == ACTIVE                      '   to change this reg
         gyroopmode(STANDBY)
 
-PRI writeReg(reg_nr, nr_bytes, ptr_buff) | cmd_pkt
+PRI writereg(reg_nr, nr_bytes, ptr_buff) | cmd_pkt
 ' Write nr_bytes to the device from ptr_buff
     case reg_nr
         $09, $0D, $0E, $10, $11, $13..$15:
