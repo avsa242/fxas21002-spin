@@ -6,7 +6,7 @@
         interrupt functionality (P2 version)
     Copyright (c) 2022
     Started Jun 15, 2021
-    Updated Aug 15, 2022
+    Updated Oct 1, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -47,15 +47,15 @@ PUB main()
 '   set threshold in micro-degrees per second. The axes' thresholds can't be
 '   independently set - all three are set to the value passed in the X-axis
 '   parameter (first param):
-    gyro.gyrointthresh(100_000000, 0, 0, 1)
-    gyro.gyrointmask(gyro.INT_ZTHS)
+    gyro.gyro_int_set_thresh(100_000000)
+    gyro.gyro_int_mask(gyro.INT_ZTHS)
 
     repeat
         ser.position(0, 3)
-        gyrodata()
+        show_gyro_data()
 
         ser.position(0, 4)
-        ser.bin(gyro.gyroint(), 7)              ' show interrupt flags
+        ser.bin(gyro.gyro_int(), 7)              ' show interrupt flags
 
         if (ser.rxcheck() == "c")               ' press the 'c' key in the demo
             cal_gyro()                          ' to calibrate sensor offsets
