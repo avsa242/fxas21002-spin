@@ -6,7 +6,7 @@
         * 3DoF data output
     Copyright (c) 2022
     Started Jul 15, 2021
-    Updated Oct 1, 2022
+    Updated Oct 16, 2022
     See end of file for terms of use.
     --------------------------------------------
 
@@ -30,8 +30,8 @@ CON
 
 OBJ
 
-    cfg: "core.con.boardcfg.p2eval"
-    gyro: "sensor.gyroscope.3dof.fxas21002"
+    cfg: "boardcfg.p2eval"
+    sensor: "sensor.gyroscope.3dof.fxas21002"
     ser: "com.serial.terminal.ansi"
 
 PUB setup()
@@ -41,13 +41,13 @@ PUB setup()
     ser.clear()
     ser.strln(@"Serial terminal started")
 
-    if (gyro.startx(SCL_PIN, SDA_PIN, I2C_FREQ, ADDR_BITS))
+    if (sensor.startx(SCL_PIN, SDA_PIN, I2C_FREQ, ADDR_BITS))
         ser.strln(@"FXAS21002 driver started")
     else
         ser.strln(@"FXAS21002 driver failed to start - halting")
         repeat
 
-    gyro.preset_active()
+    sensor.preset_active()
 
     repeat
         ser.position(0, 3)

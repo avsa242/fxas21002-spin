@@ -5,7 +5,7 @@
     Description: Driver for the NXP FXAS21002 3DoF Gyroscope (P2 version)
     Copyright (c) 2022
     Started Jun 15, 2021
-    Updated Oct 1, 2022
+    Updated Oct 16, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -370,7 +370,7 @@ PUB gyro_int_polarity(state=-2): curr_state
     state := ((curr_state & core.IPOL_MASK) | state)
     writereg(core.CTRL_REG2, 1, @state)
 
-PUB gyro_int_mask(mask=-2): curr_mask | reg2, rtcfg
+PUB gyro_int_mask(mask=-2): curr_mask | reg2, rtcfg, byte tmp[2]
 ' Set gyroscope interrupt mask
 '   Bits 11..0
 '       11: latch interrupts
@@ -387,8 +387,10 @@ PUB gyro_int_mask(mask=-2): curr_mask | reg2, rtcfg
 '       0: not used
 '   Any other value polls the chip and returns the current setting
     curr_mask := 0
-    readreg(core.CTRL_REG2, 1, @curr_mask.byte[0])
-    readreg(core.RT_CFG, 1, @curr_mask.byte[1])
+    readreg(core.CTRL_REG2, 1, @tmp[0])
+    readreg(core.RT_CFG, 1, @tmp[1])
+    curr_mask.byte[0] := tmp[0]
+    curr_mask.byte[1] := tmp[1]
     case mask
         0..%1111_11111111:
             reg2 := mask.byte[0] & core.INT_EN_BITS

@@ -6,7 +6,7 @@
         interrupt functionality
     Copyright (c) 2022
     Started Jun 9, 2021
-    Updated Oct 1, 2022
+    Updated Oct 16, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -33,30 +33,30 @@ CON
 
 OBJ
 
-    cfg     : "core.con.boardcfg.flip"
+    cfg     : "boardcfg.flip"
     ser     : "com.serial.terminal.ansi"
     time    : "time"
-    gyro    : "sensor.gyroscope.3dof.fxas21002"
+    sensor  : "sensor.gyroscope.3dof.fxas21002"
 
 PUB main{}
 
     setup{}
-    gyro.preset_active{}                        ' default settings, but enable
+    sensor.preset_active{}                        ' default settings, but enable
                                                 ' measurements, and set scale
                                                 ' factor
 
 '   set threshold in micro-degrees per second. The axes' thresholds can't be
 '   independently set - all three are set to the value passed in the X-axis
 '   parameter (first param):
-    gyro.gyro_int_set_thresh(100_000000)
-    gyro.gyro_int_mask(gyro#INT_ZTHS)
+    sensor.gyro_int_set_thresh(100_000000)
+    sensor.gyro_int_mask(sensor#INT_ZTHS)
 
     repeat
         ser.position(0, 3)
         show_gyro_data{}
 
         ser.position(0, 4)
-        ser.bin(gyro.gyro_int{}, 7)              ' show interrupt flags
+        ser.bin(sensor.gyro_int{}, 7)              ' show interrupt flags
 
         if (ser.rxcheck{} == "c")               ' press the 'c' key in the demo
             cal_gyro{}                          ' to calibrate sensor offsets
@@ -68,7 +68,7 @@ PUB setup{}
     ser.clear{}
     ser.strln(string("Serial terminal started"))
 
-    if gyro.startx(SCL_PIN, SDA_PIN, I2C_FREQ, ADDR_BITS)
+    if sensor.startx(SCL_PIN, SDA_PIN, I2C_FREQ, ADDR_BITS)
         ser.strln(string("FXAS21002 driver started (I2C)"))
     else
         ser.strln(string("FXAS21002 driver failed to start - halting"))
