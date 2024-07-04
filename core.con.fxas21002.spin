@@ -1,13 +1,12 @@
 {
-    --------------------------------------------
-    Filename: core.con.fxas21002.spin
-    Author: Jesse Burt
-    Description: FXAS21002-specific low-level constants
-    Copyright (c) 2021
-    Started Jun 07, 2021
-    Updated Jun 15, 2021
-    See end of file for terms of use.
-    --------------------------------------------
+----------------------------------------------------------------------------------------------------
+    Filename:       core.con.fxas21002.spin
+    Description:    FXAS21002-specific constants
+    Author:         Jesse Burt
+    Started:        Jun 7, 2021
+    Updated:        Jul 4, 2024
+    Copyright (c) 2024 - See end of file for terms of use.
+----------------------------------------------------------------------------------------------------
 }
 
 CON
@@ -136,12 +135,14 @@ CON
 
     CTRL_REG3       = $15
 
-PUB null{}
+
+PUB null()
 ' This is not a top-level object
+
 
 DAT
 {
-Copyright 2022 Jesse Burt
+Copyright 2024 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
