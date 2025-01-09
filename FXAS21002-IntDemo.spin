@@ -5,8 +5,8 @@
         * interrupt functionality
     Author:         Jesse Burt
     Started:        Jun 9, 2021
-    Updated:        Jul 4, 2024
-    Copyright (c) 2024 - See end of file for terms of use.
+    Updated:        Jan 9, 2025
+    Copyright (c) 2025 - See end of file for terms of use.
 ----------------------------------------------------------------------------------------------------
 }
 
@@ -16,19 +16,19 @@
 
 CON
 
-    _clkmode    = cfg._clkmode
-    _xinfreq    = cfg._xinfreq
+    _clkmode    = xtal1+pll16x
+    _xinfreq    = 5_000_000
 
 
 OBJ
 
-    cfg:    "boardcfg.flip"
     time:   "time"
     ser:    "com.serial.terminal.ansi" | SER_BAUD=115_200
-    sensor: "sensor.gyroscope.3dof.fxas21002" | SCL=28, SDA=29, I2C_FREQ=400_000, I2C_ADDR=1
+    sensor: "sensor.gyroscope.3dof.fxas21002" | SCL=28, SDA=29, I2C_FREQ=400_000, I2C_ADDR=1, ...
+                                                RST=24
 
 
-PUB main()
+PUB main() | g[sensor.GYRO_DOF], axis
 
     setup()
     sensor.preset_active()                      ' default settings, but enable
@@ -42,14 +42,32 @@ PUB main()
     sensor.gyro_int_mask(sensor.INT_ZTHS)
 
     repeat
+        repeat
+        until sensor.gyro_data_rdy()
+        sensor.gyro_dps(@g[sensor.X_AXIS], @g[sensor.Y_AXIS], @g[sensor.Z_AXIS])
+
         ser.pos_xy(0, 3)
-        show_gyro_data()
+        ser.str(@"Gyro (dps): ")
+        repeat axis from sensor.X_AXIS to sensor.Z_AXIS
+            ser.printf(@"%4.4d.%06.6d     ",    (g[axis] / 1_000_000), ...
+                                                abs(g[axis] // 1_000_000) )
 
         ser.pos_xy(0, 4)
-        ser.printf1(@"Interrupt flags: %07.7b", sensor.gyro_int())
+        ser.printf(@"Interrupt flags: %07.7b", sensor.gyro_int())
 
         if ( ser.getchar_noblock() == "c" )     ' press the 'c' key in the demo
             cal_gyro()                          ' to calibrate sensor offsets
+
+
+PUB cal_gyro()
+' Calibrate the gyroscope
+    ser.pos_xy(0, 3)
+    ser.str(@"Calibrating gyroscope...")
+    ser.clear_ln()
+    sensor.calibrate_gyro()
+    ser.pos_xy(0, 3)
+    ser.clear_ln()
+
 
 
 PUB setup()
@@ -65,11 +83,10 @@ PUB setup()
         ser.strln(@"FXAS21002 driver failed to start - halting")
         repeat
 
-#include "gyrodemo.common.spinh"
 
 DAT
 {
-Copyright 2024 Jesse Burt
+Copyright 2025 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,

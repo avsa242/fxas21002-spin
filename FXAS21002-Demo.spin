@@ -5,8 +5,8 @@
         * 3DoF data output
     Author:         Jesse Burt
     Started:        Jul 7, 2021
-    Updated:        Jul 4, 2024
-    Copyright (c) 2024 - See end of file for terms of use.
+    Updated:        Jan 9, 2025
+    Copyright (c) 2025 - See end of file for terms of use.
 ----------------------------------------------------------------------------------------------------
 }
 
@@ -16,16 +16,43 @@
 
 CON
 
-    _clkmode    = cfg._clkmode
-    _xinfreq    = cfg._xinfreq
+    _clkmode    = xtal1+pll16x
+    _xinfreq    = 5_000_000
 
 
 OBJ
 
-    cfg:    "boardcfg.flip"
     time:   "time"
     ser:    "com.serial.terminal.ansi" | SER_BAUD=115_200
-    sensor: "sensor.gyroscope.3dof.fxas21002" | SCL=28, SDA=29, I2C_FREQ=400_000, I2C_ADDR=1
+    sensor: "sensor.gyroscope.3dof.fxas21002" | SCL=28, SDA=29, I2C_FREQ=400_000, I2C_ADDR=1, ...
+                                                RST=24
+
+
+PUB main() | g[sensor.GYRO_DOF], axis
+
+    setup()
+
+    repeat
+        ser.pos_xy(0, 3)
+        if ( ser.getchar_noblock() == "c" )     ' press 'c' to calibrate/set the gyro's zero
+            cal_gyro()
+        repeat
+        until sensor.gyro_data_rdy()
+        sensor.gyro_dps(@g[sensor.X_AXIS], @g[sensor.Y_AXIS], @g[sensor.Z_AXIS])
+        ser.str(@"Gyro (dps): ")
+        repeat axis from sensor.X_AXIS to sensor.Z_AXIS
+            ser.printf(@"%4.4d.%06.6d     ",    (g[axis] / 1_000_000), ...
+                                                ||(g[axis] // 1_000_000) )
+
+
+PUB cal_gyro()
+' Calibrate the gyroscope
+    ser.pos_xy(0, 3)
+    ser.str(@"Calibrating gyroscope...")
+    ser.clear_ln()
+    sensor.calibrate_gyro()
+    ser.pos_xy(0, 3)
+    ser.clear_ln()
 
 
 PUB setup()
@@ -43,18 +70,10 @@ PUB setup()
 
     sensor.preset_active()
 
-    repeat
-        ser.pos_xy(0, 3)
-        show_gyro_data()
-        if ( ser.getchar_noblock() == "c" )
-            cal_gyro()
-
-#include "gyrodemo.common.spinh"                 ' use code common to all gyro demos
-
 
 DAT
 {
-Copyright 2024 Jesse Burt
+Copyright 2025 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,

@@ -4,8 +4,8 @@
     Description:    Driver for the NXP FXAS21002 3DoF Gyroscope
     Author:         Jesse Burt
     Started:        Jun 15, 2021
-    Updated:        Jul 4, 2024
-    Copyright (c) 2024 - See end of file for terms of use.
+    Updated:        Jan 9, 2025
+    Copyright (c) 2025 - See end of file for terms of use.
 ----------------------------------------------------------------------------------------------------
 }
 
@@ -20,6 +20,7 @@ CON
     SDA             = 1
     I2C_FREQ        = 100_000
     I2C_ADDR        = 0
+    RST             = 0
 
 
     ' Indicate to user apps how many Degrees of Freedom each sub-sensor has
@@ -90,6 +91,7 @@ VAR
 
     byte _opmd_orig
     byte _addr_bits
+    byte _RST
 
 
 OBJ
@@ -103,17 +105,27 @@ PUB null()
 
 
 PUB start(): status
-' Start using "standard" Propeller I2C pins and 100kHz
-    return startx(SCL, SDA, I2C_FREQ, I2C_ADDR)
+' Start the driver using default I/O settings
+    return startx(SCL, SDA, I2C_FREQ, I2C_ADDR, RST)
 
 
-PUB startx(SCL_PIN, SDA_PIN, I2C_HZ, ADDR_BITS): status
-' Start using custom IO pins and I2C bus frequency
+PUB startx(SCL_PIN, SDA_PIN, I2C_HZ, ADDR_BITS, RST_PIN): status
+' Start the driver with custom I/O settings
+'   SCL_PIN:    I2C clock, 0..31
+'   SDA_PIN:    I2C data, 0..31
+'   RST_PIN:    display reset, 0..31 (optional; use -1 to disable)
+'   I2C_HZ:     I2C clock speed (max official specification is 400_000 but is unenforced)
+'   ADDR_BITS:  I2C alternate address bit, 0..1
+'   DISP_HT:    display height (2, 4 are common heights)
+'   Returns:
+'       cog ID+1 of I2C engine on success (= calling cog ID+1, if the bytecode I2C engine is used)
+'       0 on failure
     if ( lookdown(SCL_PIN: 0..63) and lookdown(SDA_PIN: 0..63) )
         if ( status := i2c.init(SCL_PIN, SDA_PIN, I2C_HZ) )
             waitus(core.T_POR)                  ' wait for device startup
             { promote any non-zero value for ADDR_BITS to '1' }
-            _addr_bits := ( ((ADDR_BITS) ? 1 : 0) << 1 )
+            _addr_bits := ((ADDR_BITS <> 0) & 1) << 1
+            _RST := RST_PIN
             if ( dev_id() == core.DEVID_RESP )  ' validate device
                 return
     ' if this point is reached, something above failed
@@ -578,8 +590,13 @@ PUB gyro_scale(scale=-2): curr_scl
 
 PUB reset() | tmp
 ' Reset the device
-    tmp := core.RESET
-    writereg(core.CTRL_REG1, 1, @tmp)
+    if ( lookdown(_RST: 0..63) )
+        pinl(_RST)
+        waitus(core.T_POR)
+        pinh(_RST)
+    else
+        tmp := core.RESET
+        writereg(core.CTRL_REG1, 1, @tmp)
 
 
 PUB temp_data(): temp_adc
@@ -654,7 +671,7 @@ PRI writereg(reg_nr, nr_bytes, ptr_buff) | cmd_pkt
 
 DAT
 {
-Copyright 2024 Jesse Burt
+Copyright 2025 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
