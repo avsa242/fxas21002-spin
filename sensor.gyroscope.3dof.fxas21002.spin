@@ -4,8 +4,8 @@
     Description:    Driver for the NXP FXAS21002 3DoF Gyroscope
     Author:         Jesse Burt
     Started:        Jun 7, 2021
-    Updated:        Jan 10, 2025
-    Copyright (c) 2025 - See end of file for terms of use.
+    Updated:        May 28, 2026
+    Copyright (c) 2026 - See end of file for terms of use.
 ----------------------------------------------------------------------------------------------------
 }
 
@@ -119,10 +119,9 @@ PUB startx(SCL_PIN, SDA_PIN, I2C_HZ, ADDR_BITS, RST_PIN): status
 ' Start the driver with custom I/O settings
 '   SCL_PIN:    I2C clock, 0..31
 '   SDA_PIN:    I2C data, 0..31
-'   RST_PIN:    display reset, 0..31 (optional; use -1 to disable)
+'   RST_PIN:    reset, 0..31 (optional; use -1 to disable)
 '   I2C_HZ:     I2C clock speed (max official specification is 400_000 but is unenforced)
 '   ADDR_BITS:  I2C alternate address bit, 0..1
-'   DISP_HT:    display height (2, 4 are common heights)
 '   Returns:
 '       cog ID+1 of I2C engine on success (= calling cog ID+1, if the bytecode I2C engine is used)
 '       0 on failure
@@ -659,7 +658,7 @@ PRI writereg(reg_nr, val) | byte cmd_pkt[3]
 
 DAT
 {
-Copyright 2025 Jesse Burt
+Copyright 2026 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
