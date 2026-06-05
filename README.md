@@ -9,7 +9,13 @@ This is a P8X32A/Propeller, P2X8C4M64P/Propeller 2 driver object for the NXP FXA
 ## Salient Features
 
 * I2C connection at up to 400kHz
-* Read Gyroscope data (raw, or calculated in millionths of a degree per second)
+* Read Gyroscope data:
+    * raw ADC words
+    * micro degrees per second (integer)
+    * micro radians per second (integer)
+    * degrees per second (float; spin2 only)
+    * radians per second (float; spin2 only)
+
 * Read flags for data ready or overrun
 * Set operation mode (power down, sleep, normal/active)
 * Set output data rate

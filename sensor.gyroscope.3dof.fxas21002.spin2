@@ -558,8 +558,11 @@ PUB gyro_scale(scale=-2): cs
     case scale
         250, 500, 1000, 2000:
             scale := lookdownz(scale: 2000, 1000, 500, 250)
-            ' find LSB per DPS
+            ' set scaling factors for degrees per second and radians per second:
             _gres := lookupz(scale: 62_500, 31_250, 15_625, 7_812{5})
+            _gres_rads_sec := lookupz(scale: 001_090, 000_545, 000_272, 000_136)
+            _gres_dps_f := lookupz(scale: 0.0625, 0.03125, 0.015625, 0.0078125)
+            _gres_rads_sec_f := lookupz(scale: 0.001090830, 0.000545415, 0.000272707, 0.000136353)
             cache_opmode()
 
             scale := ((cs & core.FS_MASK) | scale)

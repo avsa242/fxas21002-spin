@@ -5,8 +5,8 @@
         * 3DoF data output
     Author:         Jesse Burt
     Started:        Jul 7, 2021
-    Updated:        Jan 9, 2025
-    Copyright (c) 2025 - See end of file for terms of use.
+    Updated:        Jun 5, 2026
+    Copyright (c) 2026 - See end of file for terms of use.
 ----------------------------------------------------------------------------------------------------
 }
 
@@ -42,7 +42,7 @@ PUB main() | g[sensor.GYRO_DOF], axis
         ser.str(@"Gyro (dps): ")
         repeat axis from sensor.X_AXIS to sensor.Z_AXIS
             ser.printf(@"%4.4d.%06.6d     ",    (g[axis] / 1_000_000), ...
-                                                ||(g[axis] // 1_000_000) )
+                                                abs(g[axis] // 1_000_000) )
 
 
 PUB cal_gyro()
@@ -73,7 +73,7 @@ PUB setup()
 
 DAT
 {
-Copyright 2025 Jesse Burt
+Copyright 2026 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
